@@ -18,7 +18,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
 
-            // BARIS INI YANG DITAMBAHKAN DARI KODE ANDA
+            // Baris ini sudah benar
             $table->enum('role', ['user', 'admin', 'kasir'])->default('user');
 
             $table->rememberToken();
@@ -28,6 +28,8 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
+     * * Fungsi down() ini juga sudah benar.
+     * Jika migrasi di-rollback, ia akan menghapus seluruh tabel users.
      */
     public function down(): void
     {
