@@ -107,11 +107,21 @@
                     <i data-lucide="bell" class="w-5 h-5"></i>
                 </button>
                 
-                <!-- Info Pengguna Admin -->
-                <div class="flex items-center space-x-2 text-sm font-medium text-gray-700 cursor-pointer p-2 rounded-full hover:bg-gray-100 transition">
-                    <div class="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">A</div>
-                    <span>adminfilm</span>
-                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+                <!-- Info Pengguna Admin dengan Dropdown Logout -->
+                <div class="relative group">
+                    <div class="flex items-center space-x-2 text-sm font-medium text-gray-700 cursor-pointer p-2 rounded-full hover:bg-gray-100 transition" id="admin-menu-button">
+                        <div class="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">A</div>
+                        <span>adminfilm</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+                    </div>
+
+                    <!-- Dropdown Menu -->
+                    <div id="admin-dropdown-menu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 focus:outline-none hidden group-hover:block">
+                        <form method="POST" action="{{ route('admin.logout') }}">
+                            @csrf
+                            <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-100">Logout</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </header>

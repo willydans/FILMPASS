@@ -92,10 +92,10 @@
                     <!-- Menggunakan ikon bell Lucide yang lebih baik -->
                     <i data-lucide="bell" class="w-5 h-5"></i>
                 </button>
-                <div class="flex items-center space-x-2 text-sm font-medium text-gray-700">
-                    <i data-lucide="circle-user" class="w-5 h-5"></i>
-                    <span>Admin</span>
-                </div>
+                <form method="POST" action="{{ route('admin.logout') }}">
+                    @csrf
+                    <button type="submit" class="text-sm text-red-700 hover:bg-red-100 p-2 rounded">Logout</button>
+                </form>
             </div>
         </header>
 

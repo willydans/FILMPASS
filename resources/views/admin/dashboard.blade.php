@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -109,12 +110,10 @@
                     <i data-lucide="bell" class="w-5 h-5"></i>
                 </button>
                 
-                <!-- Info Pengguna Admin -->
-                <div class="flex items-center space-x-2 text-sm font-medium text-gray-700 cursor-pointer p-2 rounded-full hover:bg-gray-100 transition">
-                    <div class="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">A</div>
-                    <span>adminfilm</span>
-                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
-                </div>
+                <form method="POST" action="{{ route('admin.logout') }}">
+                    @csrf
+                    <button type="submit" class="text-sm text-red-700 hover:bg-red-100 p-2 rounded">Logout</button>
+                </form>
             </div>
         </header>
 
