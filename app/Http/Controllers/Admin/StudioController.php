@@ -7,17 +7,59 @@ use Illuminate\Http\Request;
 
 class StudioController extends Controller
 {
+    /**
+     * Display a listing of the studios.
+     */
     public function index()
     {
-        // Cek apakah file ada di resources/views/admin/studio.blade.php
-        return view('admin.studio');
+        return view('admin.studio'); // studio.blade.php
     }
 
-    // Method lain kosong dulu, supaya gak bikin error baru
-    public function create() {}
-    public function store(Request $request) {}
-    public function show(string $id) {}
-    public function edit(string $id) {}
-    public function update(Request $request, string $id) {}
-    public function destroy(string $id) {}
+    /**
+     * Show the form for creating a new studio.
+     */
+    public function create()
+    {
+        abort(501, 'Not implemented yet.');
+    }
+
+    /**
+     * Store a newly created studio in storage.
+     */
+    public function store(Request $request)
+    {
+        abort(501, 'Not implemented yet.');
+    }
+
+    /**
+     * Display the specified studio.
+     */
+    public function show($id)
+    {
+        abort(501, 'Not implemented yet.');
+    }
+
+    /**
+     * Show the form for editing the specified studio.
+     */
+    public function edit($id)
+    {
+        abort(501, 'Not implemented yet.');
+    }
+
+    /**
+     * Update the specified studio in storage.
+     */
+    public function update(Request $request, $id)
+    {
+        abort(501, 'Not implemented yet.');
+    }
+
+    /**
+     * Remove the specified studio from storage.
+     */
+    public function destroy($id)
+    {
+        abort(501, 'Not implemented yet.');
+    }
 }

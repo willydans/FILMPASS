@@ -1,12 +1,6 @@
-{{-- 
-  File: resources/views/partials/admin_footer.blade.php
-  PERBAIKAN: Menghapus 'mx-auto' dari 2 div di bawah ini
-  agar konten di dalam footer bisa 'full width' (menempel ke kiri).
---}}
 <footer class="bg-slate-900 border-t border-t-slate-700/50 pt-8 pb-8">
     
-    {{-- 'mx-auto' DIHAPUS DARI SINI --}}
-    <div class="px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
         
         <div class="md:col-span-2">
             <a href="#" class="text-2xl font-bold text-white mb-2 inline-block">
@@ -43,8 +37,7 @@
         </div>
     </div>
     
-    {{-- 'mx-auto' DIHAPUS DARI SINI --}}
-    <div class="px-4 sm:px-6 lg:px-8 mt-8 border-t border-slate-700 pt-6 text-center">
+    <div class="mt-8 border-t border-slate-700 pt-6 text-center">
         <p class="text-gray-500 text-sm">&copy; {{ date('Y') }} FilmPass. Semua hak cipta dilindungi.</p>
     </div>
 </footer>
