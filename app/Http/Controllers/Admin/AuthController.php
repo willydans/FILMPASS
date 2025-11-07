@@ -1,16 +1,19 @@
 <?php
 
+// PASTIKAN NAMESPACE-NYA BENAR
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
+use App\Models\User; // <-- Ini sudah benar
 
-class AuthController extends Controller
+// 1. UBAH NAMA CLASS AGAR SESUAI RUTE
+class AdminAuthController extends Controller 
 {
     public function showLoginForm()
     {
+        // Pastikan Anda punya file ini: resources/views/admin/auth/login.blade.php
         return view('admin.auth.login');
     }
 
@@ -21,30 +24,43 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        if (Auth::guard('admin')->attempt($credentials)) {
-            $user = Auth::guard('admin')->user();
+        // 2. PERBAIKAN: Gunakan Auth::attempt() standar (guard 'web')
+        if (Auth::attempt($credentials)) {
+            
+            // 3. Ambil user yang baru saja login
+            $user = Auth::user(); 
 
-            if ($user->role === 'admin') { // Assuming a 'role' column in your User model
+            // 4. Periksa rolenya
+            if ($user->role === 'admin') { 
+                // Sukses! Dia adalah admin.
                 $request->session()->regenerate();
                 return redirect()->intended(route('admin.dashboard'));
+            
             } else {
-                Auth::guard('admin')->logout();
+                // Dia BUKAN admin (misal: 'user' atau 'kasir' mencoba login)
+                // Usir dia!
+                Auth::logout(); // <-- Langsung logout lagi
                 return back()->withErrors([
-                    'email' => 'You do not have admin access.',
+                    'email' => 'Anda tidak memiliki hak akses admin.',
                 ])->onlyInput('email');
             }
         }
 
+        // 5. Jika Auth::attempt gagal (email/password salah)
         return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
+            'email' => 'Email atau password yang Anda masukkan salah.',
         ])->onlyInput('email');
     }
 
     public function logout(Request $request)
     {
-        Auth::guard('admin')->logout();
+        // 6. PERBAIKAN: Gunakan Auth::logout() standar
+        Auth::logout(); 
+        
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+        
+        // Arahkan kembali ke halaman login admin
         return redirect()->route('admin.login');
     }
 }

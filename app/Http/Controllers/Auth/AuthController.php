@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -13,7 +14,7 @@ class AuthController extends Controller
     // Menampilkan form registrasi
     public function showRegistrationForm()
     {
-        return view('auth.register');
+        return view('auth.register'); // Pastikan Anda punya file ini
     }
 
     // Handle proses registrasi
@@ -30,16 +31,16 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => 'user' // <-- TAMBAHAN: Tentukan role secara eksplisit
         ]);
 
-        // Tidak langsung login, arahkan ke form login
         return redirect()->route('login')->with('success', 'Registrasi berhasil! Silakan login untuk melanjutkan.');
     }
 
     // Menampilkan form login
     public function showLoginForm()
     {
-        return view('auth.login');
+        return view('auth.login'); // Pastikan Anda punya file ini
     }
 
     // Handle proses login
@@ -50,16 +51,29 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        // Coba login (menggunakan guard 'web' standar)
         if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
+            
+            // PERBAIKAN 2: Pengecekan Role (Keamanan)
+            $user = Auth::user();
 
-            // Arahkan ke beranda setelah login sukses
-            return redirect()->intended('/');
+            // Hanya izinkan 'user' yang login di sini
+            if ($user->role === 'user') {
+                $request->session()->regenerate();
+                // Arahkan ke beranda setelah login sukses
+                return redirect()->intended('/');
+            } else {
+                // Jika 'admin' atau 'kasir' mencoba login, usir mereka
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Akun ini bukan akun pengguna. Silakan login di halaman admin.',
+                ])->onlyInput('email');
+            }
         }
 
         return back()->withErrors([
             'email' => 'Email atau password salah.',
-        ]);
+        ])->onlyInput('email');
     }
 
     // Handle proses logout

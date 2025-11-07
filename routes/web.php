@@ -2,14 +2,16 @@
 
 use Illuminate\Support\Facades\Route;
 
-// 1. IMPORT SEMUA CONTROLLER ANDA (PASTIKAN TIDAK ADA YANG DUPLIKAT)
-use App\Http\Controllers\FilmController;
+// 1. IMPORT CONTROLLER ADMIN (Semua sekarang ada di namespace 'Admin')
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StudioController;
 use App\Http\Controllers\Admin\ScheduleController; 
-use App\Http\Controllers\Admin\FacilityController; // <-- HANYA SATU KALI
-use App\Http\Controllers\AuthController; 
+use App\Http\Controllers\Admin\FacilityController;
 use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\FilmController; // <-- DIPINDAHKAN ke Admin
+
+// 2. IMPORT CONTROLLER AUTH (Namespace yang Benar)
+use App\Http\Controllers\Auth\AuthController; // <-- PERBAIKAN NAMESPACE
 
 /*
 |--------------------------------------------------------------------------
@@ -17,55 +19,65 @@ use App\Http\Controllers\Admin\AdminAuthController;
 |--------------------------------------------------------------------------
 */
 
-// === Rute Publik (Guest & User) ===
+// === Rute Publik (Guest) ===
 Route::get('/', function () {
     return view('dashboard'); 
 });
+
+// Rute otentikasi pengguna
 Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('login', [AuthController::class, 'login']);
-Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('register', [AuthController::class, 'showRegistrationForm'])->name('register');
 Route::post('register', [AuthController::class, 'register']);
-Route::get('dashboard', function () {
-    return view('dashboard');
-})->name('dashboard');
-Route::get('/movies', function () {
-    return view('movies');
+Route::post('logout', [AuthController::class, 'logout'])->name('logout'); // Logout
+
+
+// === Rute Pengguna (Harus Login) ===
+// PERBAIKAN: Melindungi rute user dengan middleware 'auth'
+Route::middleware(['auth'])->group(function () {
+    Route::get('dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+
+    Route::get('/movies', function () {
+        return view('movies');
+    });
+
+    Route::get('/user/riwayat', function () {
+        return view('user.riwayat');
+    })->name('riwayat');
 });
-// Halaman Riwayat Pesanan (hanya untuk user login)
-Route::get('/user/riwayat', function () {
-    return view('user.riwayat');
-})->middleware('auth')->name('riwayat');
 
 
 // === GRUP ROUTE UNTUK ADMIN ===
 Route::prefix('admin')->name('admin.')->group(function () {
 
-    // Rute Auth Admin
+    // Rute Auth Admin (Tamu Admin)
     Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('login');
     Route::post('login', [AdminAuthController::class, 'login']);
     Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout');
 
-    // Rute Admin Utama
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::resource('/films', FilmController::class);
+    // PERBAIKAN: Melindungi SEMUA rute admin dengan middleware 'auth'
+    // (Nanti Anda bisa tambahkan pengecekan role di sini, misal: ['auth', 'role:admin'])
+    Route::middleware(['auth'])->group(function () {
     
-    // Manajemen Studio
-    Route::resource('/studios', StudioController::class);
-    
-    //
-    // --- PENYESUAIAN DI SINI ---
-    // Menambahkan rute kustom untuk tombol "Maintenance" / "Aktifkan"
-    Route::patch('/studios/{studio}/toggle-status', [StudioController::class, 'toggleStatus'])->name('studios.toggleStatus');
-    //
-    //
+        // Rute Admin Utama
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        
+        // Manajemen Film (Sekarang menggunakan Admin\FilmController)
+        Route::resource('/films', FilmController::class);
+        
+        // Manajemen Studio
+        Route::resource('/studios', StudioController::class);
+        Route::patch('/studios/{studio}/toggle-status', [StudioController::class, 'toggleStatus'])->name('studios.toggleStatus');
 
-    // Manajemen Jadwal Tayang
-    Route::resource('/schedules', ScheduleController::class);
+        // Manajemen Jadwal Tayang
+        Route::resource('/schedules', ScheduleController::class);
 
+        // Rute Fasilitas (Hanya untuk memproses modal)
+        Route::post('/facilities', [FacilityController::class, 'store'])->name('facilities.store');
+        Route::delete('/facilities/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
     
-    // Rute Fasilitas (HANYA SATU KALI)
-    Route::post('/facilities', [FacilityController::class, 'store'])->name('facilities.store');
-    Route::delete('/facilities/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
+    }); // Akhir dari grup middleware admin
     
 });
