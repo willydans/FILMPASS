@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FilmController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StudioController;
-
+use App\Http\Controllers\Admin\ScheduleController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -63,5 +63,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Manajemen Jadwal Tayang
     // URL: /admin/schedules, /admin/schedules/create, dll.
     Route::resource('/schedules', ScheduleController::class);
+
+    
 
 });
