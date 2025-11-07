@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Studio; // <-- 1. IMPORT MODEL
+use App\Models\Studio;
+use App\Models\Facility; // <-- 1. IMPORT MODEL FACILITY
 use Illuminate\Http\Request;
 
 class StudioController extends Controller
@@ -13,12 +14,16 @@ class StudioController extends Controller
      */
     public function index()
     {
-        // 2. Ambil semua data studio dari database
-        $studios = Studio::orderBy('name', 'asc')->get();
+        // 2. Ambil data studio DAN relasi 'facilities'-nya
+        $studios = Studio::with('facilities')->orderBy('name', 'asc')->get();
         
-        // 3. Kirim data '$studios' ke file view 'admin.studio'
+        // 3. TAMBAHKAN INI: Ambil juga semua fasilitas
+        $facilities = Facility::orderBy('name', 'asc')->get();
+
+        // 4. Kirim KEDUA data ke file view
         return view('admin.studio', [
-            'studios' => $studios
+            'studios' => $studios,
+            'facilities' => $facilities // <-- Kirim fasilitas ke view
         ]);
     }
 
@@ -27,11 +32,12 @@ class StudioController extends Controller
      */
     public function create()
     {
-        // Nanti Anda akan membuat file: /resources/views/admin/studio_create.blade.php
-        // return view('admin.studio_create');
+        $facilities = Facility::orderBy('name')->get();
         
-        // Untuk saat ini, kita bisa kembalikan teks placeholder:
-        return "Halaman Form Tambah Studio Baru (Belum Dibuat)";
+        // Pastikan Anda sudah membuat file ini
+        return view('admin.studio_create', [
+            'facilities' => $facilities
+        ]);
     }
 
     /**
@@ -39,31 +45,25 @@ class StudioController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validasi data yang masuk dari form
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:studios',
             'type' => 'required|string|max:100',
             'capacity' => 'required|integer|min:1',
-            // Tambahkan validasi lain jika ada (misal: fasilitas)
+            'base_price' => 'required|integer|min:0',
+            'status' => 'required|string|in:Aktif,Maintenance',
+            'description' => 'nullable|string',
+            'facilities' => 'nullable|array',
+            'facilities.*' => 'exists:facilities,id'
         ]);
 
-        // 2. Buat dan simpan studio baru
-        // (Ini berfungsi karena Anda sudah mengatur $fillable di Model Studio)
-        Studio::create($validated);
+        $studio = Studio::create($validated);
 
-        // 3. Redirect kembali ke halaman index dengan pesan sukses
-        return redirect()->route('admin.studios.index') // Perhatikan: 'studios.index' (plural)
+        if ($request->has('facilities')) {
+            $studio->facilities()->sync($request->facilities);
+        }
+
+        return redirect()->route('admin.studios.index')
                          ->with('success', 'Studio baru berhasil ditambahkan.');
-    }
-
-    /**
-     * Menampilkan data studio spesifik (biasanya tidak dipakai di admin panel).
-     */
-    public function show(Studio $studio)
-    {
-        // Kita gunakan Route Model Binding (Studio $studio)
-        // Jika diakses, redirect saja ke halaman edit
-        return redirect()->route('admin.studios.edit', $studio->id);
     }
 
     /**
@@ -71,11 +71,14 @@ class StudioController extends Controller
      */
     public function edit(Studio $studio)
     {
-        // Nanti Anda akan membuat file: /resources/views/admin/studio_edit.blade.php
-        // return view('admin.studio_edit', ['studio' => $studio]);
+        $facilities = Facility::orderBy('name')->get();
+        $studio->load('facilities');
         
-        // Untuk saat ini, kita bisa kembalikan teks placeholder:
-        return "Halaman Form Edit untuk: " . $studio->name . " (Belum Dibuat)";
+        // Pastikan Anda sudah membuat file ini
+        return view('admin.studio_edit', [
+            'studio' => $studio,
+            'facilities' => $facilities
+        ]);
     }
 
     /**
@@ -83,17 +86,20 @@ class StudioController extends Controller
      */
     public function update(Request $request, Studio $studio)
     {
-        // 1. Validasi data
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:studios,name,' . $studio->id,
             'type' => 'required|string|max:100',
             'capacity' => 'required|integer|min:1',
+            'base_price' => 'required|integer|min:0',
+            'status' => 'required|string|in:Aktif,Maintenance',
+            'description' => 'nullable|string',
+            'facilities' => 'nullable|array',
+            'facilities.*' => 'exists:facilities,id'
         ]);
 
-        // 2. Update studio yang ada
         $studio->update($validated);
+        $studio->facilities()->sync($request->input('facilities', []));
 
-        // 3. Redirect kembali
         return redirect()->route('admin.studios.index')
                          ->with('success', 'Studio ' . $studio->name . ' berhasil diperbarui.');
     }
@@ -104,16 +110,13 @@ class StudioController extends Controller
     public function destroy(Studio $studio)
     {
         try {
-            // 1. Hapus studio
             $studioName = $studio->name;
             $studio->delete();
             
-            // 2. Redirect dengan pesan sukses
             return redirect()->route('admin.studios.index')
                              ->with('success', 'Studio ' . $studioName . ' berhasil dihapus.');
                              
         } catch (\Illuminate\Database\QueryException $e) {
-            // 3. Tangani error jika studio tidak bisa dihapus (misal: masih ada jadwal)
             return redirect()->route('admin.studios.index')
                              ->with('error', 'Gagal menghapus ' . $studio->name . '. Pastikan tidak ada jadwal yang terikat.');
         }
