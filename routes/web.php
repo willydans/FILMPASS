@@ -45,12 +45,23 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Rute Admin Utama
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::resource('/films', FilmController::class);
+    
+    // Manajemen Studio
     Route::resource('/studios', StudioController::class);
+    
+    //
+    // --- PENYESUAIAN DI SINI ---
+    // Menambahkan rute kustom untuk tombol "Maintenance" / "Aktifkan"
+    Route::patch('/studios/{studio}/toggle-status', [StudioController::class, 'toggleStatus'])->name('studios.toggleStatus');
+    //
+    //
+
+    // Manajemen Jadwal Tayang
     Route::resource('/schedules', ScheduleController::class);
 
     
-    // Rute Fasilitas (HANYA SEKALI, dan tanpa 'index')
+    // Rute Fasilitas (HANYA SATU KALI)
     Route::post('/facilities', [FacilityController::class, 'store'])->name('facilities.store');
-    Route::delete('/facilities}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
+    Route::delete('/facilities/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
     
 });

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Studio;
-use App\Models\Facility; // <-- 1. IMPORT MODEL FACILITY
+use App\Models\Facility; // <-- Pastikan ini di-import
 use Illuminate\Http\Request;
 
 class StudioController extends Controller
@@ -14,17 +14,39 @@ class StudioController extends Controller
      */
     public function index()
     {
-        // 2. Ambil data studio DAN relasi 'facilities'-nya
-        $studios = Studio::with('facilities')->orderBy('name', 'asc')->get();
+        // PERBAIKAN 1:
+        // Kita tambahkan 'withSum' untuk menghitung okupansi
+        // Ini akan mengambil relasi 'bookings' dari Model Studio
+        // dan menjumlahkan (SUM) kolom 'seat_count'
+        $studios = Studio::with('facilities')
+                         ->withSum('bookings', 'seat_count') // <-- INI YANG BARU
+                         ->orderBy('name', 'asc')
+                         ->get();
         
-        // 3. TAMBAHKAN INI: Ambil juga semua fasilitas
+        // Ambil juga semua fasilitas untuk modal
         $facilities = Facility::orderBy('name', 'asc')->get();
 
-        // 4. Kirim KEDUA data ke file view
+        // Kirim KEDUA data ke file view
         return view('admin.studio', [
             'studios' => $studios,
-            'facilities' => $facilities // <-- Kirim fasilitas ke view
+            'facilities' => $facilities
         ]);
+    }
+
+    /**
+     * FUNGSI BARU DITAMBAHKAN:
+     * Untuk mengubah status studio (Aktif / Maintenance)
+     */
+    public function toggleStatus(Studio $studio)
+    {
+        // 1. Ubah statusnya
+        $newStatus = ($studio->status == 'Aktif') ? 'Maintenance' : 'Aktif';
+        $studio->status = $newStatus;
+        $studio->save();
+        
+        // 2. Redirect kembali ke halaman studio
+        return redirect()->route('admin.studios.index')
+                         ->with('success', 'Status ' . $studio->name . ' diubah menjadi ' . $newStatus);
     }
 
     /**
@@ -34,7 +56,7 @@ class StudioController extends Controller
     {
         $facilities = Facility::orderBy('name')->get();
         
-        // Pastikan Anda sudah membuat file ini
+        // Pastikan Anda sudah membuat file ini: /resources/views/admin/studio_create.blade.php
         return view('admin.studio_create', [
             'facilities' => $facilities
         ]);
@@ -67,6 +89,14 @@ class StudioController extends Controller
     }
 
     /**
+     * Menampilkan data studio spesifik (redirect ke edit).
+     */
+    public function show(Studio $studio)
+    {
+        return redirect()->route('admin.studios.edit', $studio->id);
+    }
+
+    /**
      * Menampilkan form untuk mengedit studio.
      */
     public function edit(Studio $studio)
@@ -74,7 +104,7 @@ class StudioController extends Controller
         $facilities = Facility::orderBy('name')->get();
         $studio->load('facilities');
         
-        // Pastikan Anda sudah membuat file ini
+        // Pastikan Anda sudah membuat file ini: /resources/views/admin/studio_edit.blade.php
         return view('admin.studio_edit', [
             'studio' => $studio,
             'facilities' => $facilities

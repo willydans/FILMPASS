@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Schedule; // <-- TAMBAHKAN INI
+use App\Models\Booking;  // <-- TAMBAHKAN INI
 
 class Studio extends Model
 {
@@ -11,26 +13,22 @@ class Studio extends Model
 
     /**
      * Atribut yang dapat diisi secara massal (mass assignable).
-     *
-     * @var array<int, string>
      */
     protected $fillable = [
         'name',
         'type',
         'capacity',
-        'status',       // <-- DITAMBAHKAN
-        'base_price',   // <-- DITAMBAHKAN
-        'description',  // <-- DITAMBAHKAN
+        'status', 
+        'base_price', 
+        'description',
     ];
 
     /**
      * Tipe data bawaan (casts) untuk atribut.
-     *
-     * @var array<string, string>
      */
     protected $casts = [
         'capacity' => 'integer',
-        'base_price' => 'integer', // <-- DITAMBAHKAN
+        'base_price' => 'integer',
     ];
 
     /**
@@ -50,5 +48,16 @@ class Studio extends Model
     {
         // (Model relasi, nama pivot table, foreign key model ini, foreign key model relasi)
         return $this->belongsToMany(Facility::class, 'facility_studio', 'studio_id', 'facility_id');
+    }
+
+    /**
+     * RELASI BARU (PENTING UNTUK OKUPANSI):
+     * Mendapatkan semua booking untuk studio ini MELALUI jadwal (schedules).
+     */
+    public function bookings()
+    {
+        // (Model tujuan, Model perantara)
+        return $this->hasManyThrough(Booking::class, Schedule::class)
+                    ->where('bookings.booking_status', 'confirmed'); // Hanya hitung yang sudah dikonfirmasi
     }
 }

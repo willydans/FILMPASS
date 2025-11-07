@@ -1,6 +1,6 @@
 <?php
 
-namespace App\HttpControllers\Admin;
+namespace App\Http\Controllers\Admin; // <-- BENAR (dengan "Controllers")
 
 use App\Http\Controllers\Controller;
 use App\Models\Facility;

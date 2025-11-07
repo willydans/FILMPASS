@@ -4,20 +4,7 @@
 
 @section('content')
 
-{{-- Inisialisasi Alpine.js untuk Modal --}}
 <div x-data="{ showFacilityModal: false }">
-
-    {{-- 
-      CATATAN: 
-      Blok "Kembali ke Dashboard" tidak ada di screenshot baru Anda, 
-      jadi saya akan menyembunyikannya (beri komentar) agar "sama persis".
-    --}}
-    {{-- <div class="mb-4">
-        <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center text-indigo-600 ...">
-            <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i>
-            Kembali ke Dashboard
-        </a>
-    </div> --}}
 
     <div class="flex justify-between items-center mb-6">
         <div>
@@ -25,7 +12,6 @@
             <p class="text-gray-500">Kelola studio bioskop dan fasilitas</p>
         </div>
         <div>
-            {{-- Tombol "Tambah Studio" (sekarang di kanan atas) --}}
             <a href="{{ route('admin.studios.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md flex items-center w-full md:w-auto transition duration-150">
                 <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
                 Tambah Studio
@@ -77,6 +63,17 @@
     <div id="studio-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         
         @forelse ($studios as $studio)
+            {{-- 
+              PERBAIKAN OKUPANSI 1: 
+              Lakukan perhitungan di sini menggunakan data dari controller
+              'bookings_sum_seat_count' adalah properti baru dari withSum()
+            --}}
+            @php
+                $kursiTerjual = $studio->bookings_sum_seat_count ?? 0;
+                // Hitung okupansi HANYA jika kapasitas > 0
+                $okupansi = ($studio->capacity > 0) ? ($kursiTerjual / $studio->capacity) * 100 : 0;
+            @endphp
+        
             <div data-id="{{ $studio->id }}" 
                  data-type="{{ $studio->type }}" 
                  data-name="{{ strtolower($studio->name) }} {{ strtolower($studio->description) }}"
@@ -85,7 +82,6 @@
                 <div>
                     <div class="flex justify-between items-start mb-4">
                         <div class="flex items-center space-x-3">
-                            {{-- Ikon Studio Baru --}}
                             <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                                 <i data-lucide="monitor" class="w-5 h-5 text-blue-600"></i>
                             </div>
@@ -94,7 +90,6 @@
                                 <p class="text-sm text-gray-500">{{ $studio->type }}</p>
                             </div>
                         </div>
-                        {{-- Badge Status --}}
                         @if ($studio->status == 'Aktif')
                             <span class="text-xs font-semibold py-1 px-2 rounded-full bg-green-100 text-green-700">Aktif</span>
                         @else
@@ -113,18 +108,20 @@
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">Okupansi</span>
-                            <span class="font-semibold text-gray-900">0%</span> {{-- Data ini perlu kalkulasi, placeholder 0% --}}
+                            {{-- PERBAIKAN OKUPANSI 2: Tampilkan persentase yang benar --}}
+                            <span class="font-semibold text-gray-900">{{ round($okupansi) }}%</span> 
                         </div>
                     </div>
                     
                     <div class="mb-4">
                         <div class="flex justify-between text-xs mb-1">
                             <span class="text-gray-500">Tingkat Okupansi</span>
-                            <span class="font-medium text-gray-600">78%</span> {{-- Data ini perlu kalkulasi, placeholder 78% --}}
+                            {{-- PERBAIKAN OKUPANSI 3: Tampilkan persentase yang benar --}}
+                            <span class="font-medium text-gray-600">{{ round($okupansi) }}%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-1.5">
-                            {{-- Warna diubah ke bg-yellow-500 --}}
-                            <div class="bg-yellow-500 h-1.5 rounded-full" style="width: 78%"></div> 
+                            {{-- PERBAIKAN OKUPANSI 4: Atur 'width' progress bar --}}
+                            <div class="bg-yellow-500 h-1.5 rounded-full" style="width: {{ $okupansi }}%"></div> 
                         </div>
                     </div>
 
@@ -135,12 +132,11 @@
                     <div>
                         <h4 class="text-sm font-semibold mb-2 text-gray-800">Fasilitas</h4>
                         <div class="flex flex-wrap gap-2">
-                            @forelse ($studio->facilities->take(3) as $facility) {{-- Ambil 3 fasilitas pertama --}}
+                            @forelse ($studio->facilities->take(3) as $facility)
                                 <span class="text-xs text-gray-600 bg-gray-100 py-1 px-2 rounded">{{ $facility->name }}</span>
                             @empty
                                 <span class="text-xs text-gray-400">Tidak ada fasilitas.</span>
                             @endforelse
-                            {{-- Tampilkan "+1 lainnya" jika fasilitas lebih dari 3 --}}
                             @if ($studio->facilities->count() > 3)
                                 <span class="text-xs text-gray-600 bg-gray-100 py-1 px-2 rounded">
                                     +{{ $studio->facilities->count() - 3 }} lainnya
@@ -151,31 +147,36 @@
                 </div>
 
                 <div class="flex justify-start space-x-2 items-center mt-6 border-t pt-4">
-                    {{-- Tombol Edit --}}
                     <a href="{{ route('admin.studios.edit', $studio->id) }}" class="text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 font-medium py-1.5 px-3 rounded-md flex items-center transition">
                         <i data-lucide="square-pen" class="w-4 h-4 mr-1"></i>
                         Edit
                     </a>
                     
-                    @if ($studio->status == 'Aktif')
-                        {{-- Tombol Maintenance --}}
-                        <button class="text-sm text-yellow-600 bg-yellow-50 hover:bg-yellow-100 font-medium py-1.5 px-3 rounded-md flex items-center transition">
-                            <i data-lucide="wrench" class="w-4 h-4 mr-1"></i>
-                            Maintenance
-                        </button>
-                    @else
-                        {{-- Tombol Aktifkan --}}
-                        <button class="text-sm text-green-600 bg-green-50 hover:bg-green-100 font-medium py-1.5 px-3 rounded-md flex items-center transition">
-                            <i data-lucide="play" class="w-4 h-4 mr-1"></i>
-                            Aktifkan
-                        </button>
-                    @endif
+                    {{-- 
+                      PERBAIKAN TOMBOL MAINTENANCE:
+                      Bungkus tombol dengan <form> yang mengarah ke rute 'toggleStatus'
+                    --}}
+                    <form action="{{ route('admin.studios.toggleStatus', $studio->id) }}" method="POST">
+                        @csrf
+                        @method('PATCH') {{-- Method harus PATCH agar sesuai dengan rute --}}
+                        
+                        @if ($studio->status == 'Aktif')
+                            <button typeG="submit" class="text-sm text-yellow-600 bg-yellow-50 hover:bg-yellow-100 font-medium py-1.5 px-3 rounded-md flex items-center transition">
+                                <i data-lucide="wrench" class="w-4 h-4 mr-1"></i>
+                                Maintenance
+                            </button>
+                        @else
+                            <button type="submit" class="text-sm text-green-600 bg-green-50 hover:bg-green-100 font-medium py-1.5 px-3 rounded-md flex items-center transition">
+                                <i data-lucide="play" class="w-4 h-4 mr-1"></i>
+                                Aktifkan
+                            </button>
+                        @endif
+                    </form>
                     
-                    {{-- Tombol Hapus --}}
                     <form action="{{ route('admin.studios.destroy', $studio->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus studio ini?');">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="text-sm text-red-600 bg-red-50 hover:bg-red-100 font-medium py-1.5 px-3 rounded-md flex items-center transition">
+                        <button type-="submit" class="text-sm text-red-600 bg-red-50 hover:bg-red-100 font-medium py-1.5 px-3 rounded-md flex items-center transition">
                             <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i>
                             Hapus
                         </button>
@@ -271,7 +272,7 @@
             const matchesType = (filterType === 'Semua') || (type === filterType);
 
             if (matchesSearch && matchesType) {
-                card.style.display = 'flex'; // 'flex' karena kartu kita menggunakan flexbox
+                card.style.display = 'flex';
             } else {
                 card.style.display = 'none';
             }
