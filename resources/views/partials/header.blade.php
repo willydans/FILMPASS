@@ -10,9 +10,9 @@
         </a>
         
         <div class="hidden md:flex space-x-8">
-            <a href="#" class="text-gray-300 hover:text-white transition-colors">Beranda</a>
-            <a href="#" class="text-gray-300 hover:text-white transition-colors">Film</a>
-            <a href="#" class="text-gray-300 hover:text-white transition-colors">Cari Film</a>
+            <a href="/" class="text-gray-300 hover:text-white transition-colors">Beranda</a>
+            <a href="/movies" class="text-gray-300 hover:text-white transition-colors">Film</a>
+            <a href="/movies" class="text-gray-300 hover:text-white transition-colors">Cari Film</a>
         </div>
         
         <div class="flex items-center space-x-4">

@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FilmController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StudioController;
-use App\Http\Controllers\Admin\ScheduleController; 
 
 /*
 |--------------------------------------------------------------------------
@@ -19,9 +18,30 @@ Route::get('/', function () {
     return view('dashboard'); 
 });
 
+// Rute untuk otentikasi pengguna
+Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::post('login', [AuthController::class, 'login']);
+Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('register', [AuthController::class, 'showRegistrationForm'])->name('register');
+Route::post('register', [AuthController::class, 'register']);
+
+// Rute untuk dashboard pengguna
+Route::get('dashboard', function () {
+    return view('dashboard');
+})->name('dashboard');
+
+Route::get('/movies', function () {
+    return view('movies');
+});
+
 
 // 3. GRUP ROUTE UNTUK ADMIN
 Route::prefix('admin')->name('admin.')->group(function () {
+
+    // Rute untuk login admin
+    Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('login');
+    Route::post('login', [AdminAuthController::class, 'login']);
+    Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout');
 
     // Dashboard Admin
     // URL: /admin/dashboard
