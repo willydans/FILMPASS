@@ -34,6 +34,10 @@ Route::get('dashboard', function () {
 Route::get('/movies', function () {
     return view('movies');
 });
+// Halaman Riwayat Pesanan (hanya untuk user login)
+Route::get('/user/riwayat', function () {
+    return view('user.riwayat');
+})->middleware('auth')->name('riwayat');
 
 // GRUP ROUTE UNTUK ADMIN
 Route::prefix('admin')->name('admin.')->group(function () {
