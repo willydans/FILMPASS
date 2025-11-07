@@ -5,12 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Admin - FilmPass</title>
     
-    {{-- Memuat skrip dari partials/head.blade.php --}}
-    @include('partials.head') 
-
+    {{-- 
+      CATATAN: Anda bisa mengganti 4 baris di bawah ini dengan:
+      @include('partials.head')
+      ...jika file 'head.blade.php' Anda sudah berisi Tailwind + Alpine + Font.
+      Untuk saat ini, kita akan gunakan CDN langsung.
+    --}}
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
     <style>
-        /* Gaya kustom Anda */
+        /* Gaya kustom Anda sudah bagus */
         body { font-family: 'Inter', sans-serif; }
         .sidebar { width: 256px; min-height: 100vh; transition: transform 0.3s ease-in-out; }
         .content { margin-left: 0; transition: margin-left 0.3s ease-in-out; }
@@ -30,10 +40,6 @@
                 </span>
             </div>
 
-            {{-- 
-              PERBAIKAN ERROR PARSE DI SINI:
-              Mengganti comment Blade {{-- ... --}} menjadi comment PHP // ...
-            --}}
             @php
                 // Helper untuk menandai link aktif
                 $isActive = function($route) {
@@ -55,6 +61,11 @@
                     Manajemen Film
                 </a>
 
+                {{-- 
+                  PERBAIKAN ERROR:
+                  Mengganti route('admin.studio.index') (SALAH)
+                  menjadi route('admin.studios.index') (BENAR, plural)
+                --}}
                 <a href="{{ route('admin.studios.index') }}" 
                    class="flex items-center p-3 rounded-lg transition duration-150 {{ $isActive('admin.studios.*') }}">
                     <i data-lucide="monitor" class="w-5 h-5 mr-3"></i>
@@ -90,6 +101,7 @@
                 <button class="text-gray-500 hover:text-gray-700">
                     <i data-lucide="bell" class="w-5 h-5"></i>
                 </button>
+                
                 <div class="flex items-center space-x-2 text-sm font-medium text-gray-700 cursor-pointer p-2 rounded-full hover:bg-gray-100 transition">
                     <div class="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
                         {{ substr(Auth::user()->name ?? 'A', 0, 1) }}
@@ -120,18 +132,22 @@
                 <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-md border border-gray-100">
                     <h3 class="text-xl font-semibold text-gray-800 mb-4">Aksi Cepat</h3>
                     <div class="space-y-3">
+                        
                         <a href="{{ route('admin.films.create') }}" class="flex items-center p-3 bg-indigo-50 text-indigo-700 font-semibold rounded-lg hover:bg-indigo-100 transition duration-200">
                             <i data-lucide="plus-circle" class="w-5 h-5 mr-3"></i>
                             Tambah Film Baru
                         </a>
+
                         <a href="{{ route('admin.schedules.create') }}" class="flex items-center p-3 bg-green-50 text-green-700 font-semibold rounded-lg hover:bg-green-100 transition duration-200">
                             <i data-lucide="calendar-check" class="w-5 h-5 mr-3"></i>
                             Buat Jadwal Tayang
                         </a>
+
                         <a href="{{ route('admin.studios.create') }}" class="flex items-center p-3 bg-orange-50 text-orange-700 font-semibold rounded-lg hover:bg-orange-100 transition duration-200">
                             <i data-lucide="monitor-dot" class="w-5 h-5 mr-3"></i>
                             Tambah Studio
                         </a>
+
                         <a href="#" class="flex items-center p-3 bg-purple-50 text-purple-700 font-semibold rounded-lg hover:bg-purple-100 transition duration-200">
                             <i data-lucide="bar-chart-3" class="w-5 h-5 mr-3"></i>
                             Lihat Laporan
@@ -190,11 +206,13 @@
     </div>
 
     <script>
-        {{-- Mengambil data dinamis dari DashboardController --}}
+    
         const totalFilm = {{ $totalFilm ?? 0 }};
         const totalPemesanan = {{ $totalPemesanan ?? 0 }};
         const totalPendapatan = {{ $totalPendapatan ?? 0 }};
         const totalPengguna = {{ $totalPengguna ?? 0 }};
+        
+       
         const penjualanMingguanData = @json($penjualanMingguan ?? []);
 
         // Kartu Statistik
