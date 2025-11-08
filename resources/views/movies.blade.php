@@ -159,9 +159,13 @@
     }
 
     document.addEventListener('click', e => {
-      const btn = e.target.closest('.booking-btn');
-      if (btn) alert(`Berhasil memilih film "${btn.dataset.movieTitle}"! (Simulasi Pemesanan)`);
-    });
+  const btn = e.target.closest('.booking-btn');
+  if (btn) {
+    const movieTitle = btn.dataset.movieTitle;
+    // Redirect ke halaman pemesanan
+    window.location.href = `/pesan-tiket/${encodeURIComponent(movieTitle)}`;
+  }
+});
 
     window.onload = () => {
       filterMovies();
