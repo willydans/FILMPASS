@@ -1,130 +1,180 @@
-@extends('layouts.admin')
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Tayang - FilmPass Admin</title>
 
-@section('content')
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'fp-blue': '#1c7ed6',
+                        'fp-dark': '#1e293b',
+                    }
+                }
+            }
+        }
+    </script>
 
-{{-- Bagian Header & Tombol Tambah --}}
-<div class="flex justify-between items-center mb-6">
-    <div>
-        <h1 class="text-3xl font-bold text-gray-800">Jadwal Tayang</h1>
-        <p class="text-gray-600">Kelola jadwal tayang film di semua studio</p>
-    </div>
-    <div>
-        {{-- 
-          CATATAN: Pastikan nama rute ini benar. 
-          Berdasarkan 'Route::resource', seharusnya 'admin.schedules.create' (plural) 
-        --}}
-        <a href="{{ route('admin.schedules.create') }}" 
-           class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-lg inline-flex items-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-            Tambah Jadwal
-        </a>
-    </div>
-</div>
+    <style>
+        .admin-header {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar {
+            width: 280px;
+        }
+    </style>
+</head>
+<body class="font-sans bg-gray-50">
 
-{{-- Bagian Filter --}}
-<div class="bg-white p-4 rounded-lg shadow-md mb-6">
-    <form action="{{ route('admin.schedules.index') }}" method="GET" class="flex items-center space-x-4">
-        <label for="filter_tanggal" class="text-sm font-medium text-gray-700">Filter Tanggal:</label>
-        <input type="date" name="filter_tanggal" id="filter_tanggal" 
-               value="{{ $filterDate }}" 
-               class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
-        <button type="submit" class="bg-blue-500 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-600">Filter</button>
-        
-        <span class="text-gray-500 text-sm ml-auto">
-            {{ $scheduleCount }} jadwal ditemukan
-        </span>
-    </form>
-</div>
+    <!-- HEADER -->
+    @include('partials.header')
 
-{{-- Bagian Tabel Jadwal --}}
-<div class="bg-white rounded-lg shadow-md overflow-hidden">
-    {{-- Header Tabel --}}
-    <div class="grid grid-cols-12 gap-4 px-6 py-4 border-b bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-        <div class="col-span-3">Film</div>
-        <div class="col-span-2">Studio</div>
-        <div class="col-span-2">Waktu</div>
-        <div class="col-span-1">Harga</div>
-        <div class="col-span-2">Okupansi</div>
-        <div class="col-span-1">Status</div>
-        <div class="col-span-1 text-center">Aksi</div>
-    </div>
+    <div class="flex min-h-screen">
+        <!-- SIDEBAR -->
+        @include('partials.admin_sidebar')
 
-    {{-- Body Tabel (Looping Data) --}}
-    @forelse ($schedules as $schedule)
-        <div class="grid grid-cols-12 gap-4 px-6 py-4 items-center {{ !$loop->last ? 'border-b border-gray-200' : '' }}">
-            
-            {{-- FILM --}}
-            <div class="col-span-3">
-                <span class="text-sm font-semibold text-gray-800">{{ $schedule->film->title }}</span>
-            </div>
-            
-            {{-- STUDIO --}}
-            <div class="col-span-2">
-                <span class="text-sm text-gray-700">{{ $schedule->studio->name }} ({{ $schedule->studio->type }})</span>
-            </div>
-            
-            {{-- WAKTU (PERBAIKAN DI SINI) --}}
-            <div class="col-span-2">
-                <span class="text-sm text-gray-700">
-                    {{ $schedule->start_time->format('H:i') }} - {{ $schedule->end_time->format('H:i') }}
-                </span> {{-- Huruf 's' sudah dihapus dari sini --}}
-            </div>
-            
-            {{-- HARGA (Format Angka) --}}
-            <div class="col-span-1">
-                <span class="text-sm font-medium text-blue-600">Rp {{ number_format($schedule->price, 0, ',', '.') }}</span>
-            </div>
-            
-            {{-- OKUPANSI (Perhitungan) --}}
-            <div class="col-span-2">
-                @php
-                    $kursiTerjual = $schedule->bookings_sum_seat_count ?? 0;
-                    $kapasitas = $schedule->studio->capacity;
-                    $persentase = ($kapasitas > 0) ? ($kursiTerjual / $kapasitas) * 100 : 0;
-                @endphp
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-600">{{ $kursiTerjual }}/{{ $kapasitas }} kursi</span>
-                    <span class="font-medium text-gray-800">{{ round($persentase) }}%</span>
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 p-8 overflow-y-auto">
+
+            <!-- Header Section -->
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Jadwal Tayang</h1>
+                    <p class="text-gray-600">Kelola jadwal tayang film di semua studio</p>
                 </div>
-                <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
-                    <div class="bg-yellow-500 h-2 rounded-full" style="width: {{ $persentase }}%"></div>
+                <div>
+                    <a href="{{ route('admin.schedules.create') }}" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-lg inline-flex items-center transition duration-200">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        Tambah Jadwal
+                    </a>
                 </div>
             </div>
-            
-            {{-- STATUS (Conditional Badge) --}}
-            <div class="col-span-1">
-                @if ($schedule->status == 'Sedang Tayang')
-                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700">
-                        Sedang Tayang
-                    </span>
-                @else
-                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
-                        {{ $schedule->status }}
-                    </span>
+
+            <!-- Filter Section -->
+            <div class="bg-white p-4 rounded-xl shadow-md mb-6 border border-gray-200">
+                <form action="{{ route('admin.schedules.index') }}" method="GET"
+                      class="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-8">
+                    
+                    <!-- Filter Tanggal -->
+                    <div class="flex items-center space-x-3">
+                        <label for="filter_tanggal" class="text-sm font-medium text-gray-700 whitespace-nowrap">Filter Tanggal:</label>
+                        <input type="date" name="filter_tanggal" id="filter_tanggal" value="{{ $filterDate }}"
+                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[150px]">
+                    </div>
+
+                    <!-- Filter Film -->
+                    <div class="flex items-center space-x-3">
+                        <label for="film_id" class="text-sm font-medium text-gray-700 whitespace-nowrap hidden sm:block">Film:</label>
+                        <select name="film_id" id="film_id"
+                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 w-full md:w-auto">
+                            <option value="">Semua Film</option>
+                            @foreach ($films as $film)
+                                <option value="{{ $film->id }}" {{ $filterFilmId == $film->id ? 'selected' : '' }}>
+                                    {{ $film->title }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Tombol Filter -->
+                    <div class="flex items-center space-x-4">
+                        <button type="submit"
+                            class="bg-blue-500 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-600 w-full md:w-auto transition duration-200">
+                            Filter
+                        </button>
+                        <span class="text-gray-500 text-sm whitespace-nowrap">
+                            {{ $scheduleCount }} jadwal ditemukan
+                        </span>
+                    </div>
+                </form>
+            </div>
+
+            <!-- TABEL JADWAL -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+
+                <!-- Header Tabel -->
+                <div class="grid grid-cols-12 gap-4 px-6 py-4 border-b bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <div class="col-span-3">Film</div>
+                    <div class="col-span-2">Studio</div>
+                    <div class="col-span-2">Waktu</div>
+                    <div class="col-span-1 text-center">Harga</div>
+                    <div class="col-span-2">Okupansi</div>
+                    <div class="col-span-1">Status</div>
+                    <div class="col-span-1 text-center">Aksi</div>
+                </div>
+
+                <!-- ROWS -->
+                @foreach ($schedules as $schedule)
+                <div class="grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-gray-200 hover:bg-gray-50 transition duration-100">
+                    <div class="col-span-3">
+                        <span class="text-sm font-semibold text-gray-800">{{ $schedule->film->title }}</span>
+                    </div>
+                    <div class="col-span-2">
+                        <a href="#studio-{{ $schedule->studio_id }}" class="text-sm text-blue-600 hover:text-blue-800 hover:underline">
+                            {{ $schedule->studio->name }}
+                        </a>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-sm text-gray-700">{{ $schedule->start_time }} - {{ $schedule->end_time }}</span>
+                    </div>
+                    <div class="col-span-1 text-center">
+                        <span class="text-sm font-bold text-blue-600">Rp {{ number_format($schedule->price, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="col-span-2">
+                        <div class="text-xs text-gray-600">Data okupansi belum tersedia</div>
+                    </div>
+                    <div class="col-span-1">
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">Aktif</span>
+                    </div>
+                    <div class="col-span-1 flex justify-center space-x-2">
+                        <a href="{{ route('admin.schedules.edit', $schedule->id) }}" class="text-blue-500 hover:text-blue-700" title="Edit">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414
+                                      a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        </a>
+                        <form action="{{ route('admin.schedules.destroy', $schedule->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus jadwal ini?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-red-500 hover:text-red-700" title="Hapus">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862
+                                          a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6
+                                          m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1
+                                          1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                @endforeach
+
+                @if($schedules->isEmpty())
+                <div class="text-center text-gray-500 p-6">
+                    Tidak ada jadwal tayang ditemukan untuk tanggal ini.
+                </div>
                 @endif
             </div>
-            
-            {{-- AKSI --}}
-            <div class="col-span-1 flex justify-center space-x-2">
-                {{-- 
-                  CATATAN: Nanti ubah rute ini ke 'admin.schedules.edit' 
-                  dan 'admin.schedules.destroy'
-                --}}
-                <a href="{{ route('admin.schedules.edit', $schedule->id) }}" class="text-blue-500 hover:text-blue-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                </a>
-                <a href="#" class="text-red-500 hover:text-red-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </a>
-            </div>
-            
-        </div>
-    @empty
-        {{-- Jika tidak ada jadwal ditemukan --}}
-        <div class="text-center text-gray-500 p-6">
-            Tidak ada jadwal tayang ditemukan untuk tanggal ini.
-        </div>
-    @endforelse
-</div>
 
-@endsection
+        </main>
+    </div>
+
+    <!-- FOOTER -->
+    @include('partials.footer')
+
+</body>
+</html>

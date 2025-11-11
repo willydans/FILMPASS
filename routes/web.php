@@ -7,8 +7,8 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StudioController;
 use App\Http\Controllers\Admin\ScheduleController; 
 use App\Http\Controllers\Admin\FacilityController;
-use App\Http\Controllers\Admin\AdminAuthController;
-use App\Http\Controllers\Admin\FilmController;
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\FilmController;
 
 // 2. IMPORT CONTROLLER AUTH
 use App\Http\Controllers\Auth\AuthController;
