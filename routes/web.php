@@ -46,6 +46,10 @@ Route::middleware(['auth'])->group(function () {
         return view('user.riwayat');
     })->name('riwayat');
 
+     Route::get('/user/detail', function () {
+        return view('user.detail');
+    })->name('detail');
+
     // Rute dari screenshot Anda
     Route::get('pesan-tiket/{title}', [TicketController::class, 'index'])->name('pesan.tiket');
     Route::post('pesan-tiket', [TicketController::class, 'store'])->name('pesan.tiket.store');
