@@ -5,22 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Admin - FilmPass</title>
     
-    {{-- 
-      CATATAN: Anda bisa mengganti 4 baris di bawah ini dengan:
-      @include('partials.head')
-      ...jika file 'head.blade.php' Anda sudah berisi Tailwind + Alpine + Font.
-      Untuk saat ini, kita akan gunakan CDN langsung.
-    --}}
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    {{-- Memuat skrip dari partials/head.blade.php --}}
+    @include('partials.head') 
+
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    
     <style>
-        /* Gaya kustom Anda sudah bagus */
+        /* Gaya kustom Anda */
         body { font-family: 'Inter', sans-serif; }
         .sidebar { width: 256px; min-height: 100vh; transition: transform 0.3s ease-in-out; }
         .content { margin-left: 0; transition: margin-left 0.3s ease-in-out; }
@@ -61,11 +51,6 @@
                     Manajemen Film
                 </a>
 
-                {{-- 
-                  PERBAIKAN ERROR:
-                  Mengganti route('admin.studio.index') (SALAH)
-                  menjadi route('admin.studios.index') (BENAR, plural)
-                --}}
                 <a href="{{ route('admin.studios.index') }}" 
                    class="flex items-center p-3 rounded-lg transition duration-150 {{ $isActive('admin.studios.*') }}">
                     <i data-lucide="monitor" class="w-5 h-5 mr-3"></i>
@@ -93,6 +78,11 @@
 
     <div id="main-content" class="content p-0 w-full flex flex-col flex-grow">
         
+        {{-- 
+          ==================================================
+          REVISI HEADER DIMULAI DI SINI
+          ==================================================
+        --}}
         <header class="bg-white p-4 border-b border-gray-200 flex justify-between items-center fixed top-0 w-full lg:w-[calc(100%-256px)] z-20 shadow-sm">
              <button id="menu-toggle" class="text-gray-500 hover:text-gray-700 lg:hidden p-1 mr-2">
                 <i data-lucide="menu" class="w-6 h-6"></i>
@@ -102,15 +92,44 @@
                     <i data-lucide="bell" class="w-5 h-5"></i>
                 </button>
                 
-                <div class="flex items-center space-x-2 text-sm font-medium text-gray-700 cursor-pointer p-2 rounded-full hover:bg-gray-100 transition">
-                    <div class="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
-                        {{ substr(Auth::user()->name ?? 'A', 0, 1) }}
+                <div x-data="{ open: false }" class="relative">
+                    
+                    <div @click="open = !open" class="flex items-center space-x-2 text-sm font-medium text-gray-700 cursor-pointer p-2 rounded-full hover:bg-gray-100 transition">
+                        <div class="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                            {{ substr(Auth::user()->name ?? 'A', 0, 1) }}
+                        </div>
+                        <span>{{ Auth::user()->name ?? 'Admin' }}</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform" :class="{ 'rotate-180': open }"></i>
                     </div>
-                    <span>{{ Auth::user()->name ?? 'Admin' }}</span>
-                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+
+                    <div x-show="open" 
+                         @click.away="open = false"
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                        class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-100"
+                        style="display: none;">
+                        
+                        {{-- Form Logout (Wajib pakai Form untuk rute POST) --}}
+                        <form method="POST" action="{{ route('admin.logout') }}">
+                            @csrf
+                            <button type="submit" 
+                                    class="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
+                                Logout
+                            </button>
+                        </form>
+                    </div>
                 </div>
-            </div>
+                </div>
         </header>
+        {{-- ================================================ --}}
+        {{-- REVISI HEADER SELESAI --}}
+        {{-- ================================================ --}}
+
 
         <main class="pt-20 px-6 pb-12 flex-grow">
             <div class="mb-8">
@@ -132,36 +151,30 @@
                 <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-md border border-gray-100">
                     <h3 class="text-xl font-semibold text-gray-800 mb-4">Aksi Cepat</h3>
                     <div class="space-y-3">
-                        
                         <a href="{{ route('admin.films.create') }}" class="flex items-center p-3 bg-indigo-50 text-indigo-700 font-semibold rounded-lg hover:bg-indigo-100 transition duration-200">
                             <i data-lucide="plus-circle" class="w-5 h-5 mr-3"></i>
                             Tambah Film Baru
                         </a>
-
                         <a href="{{ route('admin.schedules.create') }}" class="flex items-center p-3 bg-green-50 text-green-700 font-semibold rounded-lg hover:bg-green-100 transition duration-200">
                             <i data-lucide="calendar-check" class="w-5 h-5 mr-3"></i>
                             Buat Jadwal Tayang
                         </a>
-
                         <a href="{{ route('admin.studios.create') }}" class="flex items-center p-3 bg-orange-50 text-orange-700 font-semibold rounded-lg hover:bg-orange-100 transition duration-200">
                             <i data-lucide="monitor-dot" class="w-5 h-5 mr-3"></i>
                             Tambah Studio
                         </a>
-
                         <a href="#" class="flex items-center p-3 bg-purple-50 text-purple-700 font-semibold rounded-lg hover:bg-purple-100 transition duration-200">
                             <i data-lucide="bar-chart-3" class="w-5 h-5 mr-3"></i>
                             Lihat Laporan
                         </a>
                     </div>
                 </div>
-
             </div>
-            
         </main>
 
         <footer class="bg-gray-900 text-white mt-12 pt-12 pb-10 border-t border-gray-700">
+            {{-- ... (Isi footer Anda tidak berubah) ... --}}
             <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10">
-                
                 <div class="md:col-span-2 space-y-4">
                     <div class="text-2xl font-extrabold flex items-center">
                         <i data-lucide="clapperboard" class="w-6 h-6 mr-2 text-indigo-500"></i>
@@ -177,7 +190,6 @@
                         <a href="#" class="hover:text-white transition"><i data-lucide="youtube" class="w-5 h-5"></i></a>
                     </div>
                 </div>
-
                 <div>
                     <h4 class="text-lg font-semibold mb-4">Tautan Cepat</h4>
                     <nav class="space-y-2 text-sm">
@@ -187,7 +199,6 @@
                         <a href="#" class="block text-gray-400 hover:text-indigo-400 transition">Tentang Kami</a>
                     </nav>
                 </div>
-
                 <div>
                     <h4 class="text-lg font-semibold mb-4">Bantuan</h4>
                     <nav class="space-y-2 text-sm">
@@ -197,7 +208,6 @@
                         <a href="#" class="block text-gray-400 hover:text-indigo-400 transition">Kebijakan Privasi</a>
                     </nav>
                 </div>
-
             </div>
             <div class="max-w-7xl mx-auto px-6 mt-10 border-t border-gray-700 pt-6">
                 <p class="text-center text-sm text-gray-500">&copy; {{ date('Y') }} FilmPass. All rights reserved.</p>
@@ -206,23 +216,15 @@
     </div>
 
     <script>
-    
+        /* Mengambil data dinamis dari DashboardController */
         const totalFilm = {{ $totalFilm ?? 0 }};
         const totalPemesanan = {{ $totalPemesanan ?? 0 }};
         const totalPendapatan = {{ $totalPendapatan ?? 0 }};
         const totalPengguna = {{ $totalPengguna ?? 0 }};
-        
-       
         const penjualanMingguanData = @json($penjualanMingguan ?? []);
 
-        // Kartu Statistik
-        const statsData = [
-            { title: "Total Film", value: totalFilm, icon: "clapperboard", bgColor: "bg-indigo-50", iconColor: "text-indigo-600", iconBg: "bg-indigo-100" },
-            { title: "Total Pemesanan", value: totalPemesanan, icon: "shopping-cart", bgColor: "bg-green-50", iconColor: "text-green-600", iconBg: "bg-green-100" },
-            { title: "Total Pendapatan", value: totalPendapatan, icon: "wallet", isCurrency: true, bgColor: "bg-yellow-50", iconColor: "text-yellow-600", iconBg: "bg-yellow-100" },
-            { title: "Total Pengguna", value: totalPengguna, icon: "users", bgColor: "bg-purple-50", iconColor: "text-purple-600", iconBg: "bg-purple-100" },
-        ];
-
+        // (Semua fungsi JavaScript Anda: renderStatsCards, renderSalesChart, dll.)
+        
         // Fungsi format Rupiah
         function formatRupiah(number) {
             return new Intl.NumberFormat('id-ID', {
@@ -236,7 +238,12 @@
         function renderStatsCards() {
             const container = document.getElementById('stats-cards');
             let html = '';
-
+            const statsData = [
+                { title: "Total Film", value: totalFilm, icon: "clapperboard", bgColor: "bg-indigo-50", iconColor: "text-indigo-600", iconBg: "bg-indigo-100" },
+                { title: "Total Pemesanan", value: totalPemesanan, icon: "shopping-cart", bgColor: "bg-green-50", iconColor: "text-green-600", iconBg: "bg-green-100" },
+                { title: "Total Pendapatan", value: totalPendapatan, icon: "wallet", isCurrency: true, bgColor: "bg-yellow-50", iconColor: "text-yellow-600", iconBg: "bg-yellow-100" },
+                { title: "Total Pengguna", value: totalPengguna, icon: "users", bgColor: "bg-purple-50", iconColor: "text-purple-600", iconBg: "bg-purple-100" },
+            ];
             statsData.forEach(stat => {
                 const displayValue = stat.isCurrency 
                     ? formatRupiah(stat.value).replace('IDR', 'Rp')

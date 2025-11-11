@@ -2,17 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 
-// 1. IMPORT CONTROLLER PUBLIK (NON-ADMIN)
-use App\Http\Controllers\Auth\AuthController;
+// 1. IMPORT SEMUA CONTROLLER ANDA
 use App\Http\Controllers\FilmController;
-use App\Http\Controllers\TicketController;
-
-// 2. IMPORT SEMUA CONTROLLER ADMIN ANDA
-use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StudioController;
 use App\Http\Controllers\Admin\ScheduleController; 
 use App\Http\Controllers\Admin\FacilityController;
+use App\Http\Controllers\Auth\AuthController; // Pastikan namespace ini benar
+use App\Http\Controllers\Admin\AdminAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,24 +17,31 @@ use App\Http\Controllers\Admin\FacilityController;
 |--------------------------------------------------------------------------
 */
 
-// === Rute Publik (Guest & User) ===
-Route::get('/', function () {
-    return view('dashboard'); 
+// === Rute Publik (Guest) ===
+// Rute ini HANYA bisa diakses oleh user yang BELUM LOGIN.
+// 'guest' adalah alias untuk middleware 'RedirectIfAuthenticated' yang baru kita edit.
+Route::middleware(['guest'])->group(function () {
+    
+    Route::get('/', function () {
+        return view('dashboard'); 
+    });
+
+    // Rute otentikasi pengguna
+    Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('login', [AuthController::class, 'login']);
+    Route::get('register', [AuthController::class, 'showRegistrationForm'])->name('register');
+    Route::post('register', [AuthController::class, 'register']);
+
 });
 
-// Rute Auth Pengguna (dari file AuthController)
-Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('login', [AuthController::class, 'login']);
-Route::post('logout', [AuthController::class, 'logout'])->name('logout');
-Route::get('register', [AuthController::class, 'showRegistrationForm'])->name('register');
-Route::post('register', [AuthController::class, 'register']);
 
-// Rute yang memerlukan login user biasa
+// === Rute Pengguna (Harus Login) ===
+// Rute ini HANYA bisa diakses oleh user yang SUDAH LOGIN
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
-    
+
     Route::get('/movies', function () {
         return view('movies');
     });
@@ -45,45 +49,48 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/user/riwayat', function () {
         return view('user.riwayat');
     })->name('riwayat');
+;
 
-     Route::get('/user/detail', function () {
+    Route::get('/user/detail', function () {
         return view('user.detail');
     })->name('detail');
 
-    // Rute dari screenshot Anda
-    Route::get('pesan-tiket/{title}', [TicketController::class, 'index'])->name('pesan.tiket');
-    Route::post('pesan-tiket', [TicketController::class, 'store'])->name('pesan.tiket.store');
+     // Rute Logout (harus login untuk bisa logout)
+    Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 });
 
 
 // === GRUP ROUTE UNTUK ADMIN ===
 Route::prefix('admin')->name('admin.')->group(function () {
 
-    // Rute Auth Admin (Tamu Admin)
-    Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('login');
-    Route::post('login', [AdminAuthController::class, 'login']);
-    Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout');
+    // Rute Auth Admin (Hanya untuk Tamu)
+    Route::middleware(['guest'])->group(function () {
+        Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('login');
+        Route::post('login', [AdminAuthController::class, 'login']);
+    });
+    
+    // Rute Logout Admin (Harus login untuk bisa logout)
+    Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-    // Rute Admin Utama (Dilindungi Middleware)
-    // Semua rute di sini memerlukan login
-    Route::middleware(['auth'])->group(function () {
+    //
+    // --- RUTE ADMIN UTAMA (DIAMANKAN) ---
+    // User harus login DAN memiliki role 'admin'/'kasir' untuk mengakses ini
+    // (Asumsi Anda sudah membuat middleware 'role.admin' dari langkah kita sebelumnya)
+    //
+    Route::middleware(['auth', 'role.admin'])->group(function () {
     
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-        // Manajemen Film
+        
         Route::resource('/films', FilmController::class);
         
-        // Manajemen Studio
         Route::resource('/studios', StudioController::class);
         Route::patch('/studios/{studio}/toggle-status', [StudioController::class, 'toggleStatus'])->name('studios.toggleStatus');
 
-        // Manajemen Jadwal Tayang
         Route::resource('/schedules', ScheduleController::class);
 
-        // Rute Fasilitas (Hanya untuk modal)
         Route::post('/facilities', [FacilityController::class, 'store'])->name('facilities.store');
         Route::delete('/facilities/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
     
-    }); // Akhir dari grup middleware admin
+    }); // Akhir dari grup middleware 'auth' & 'role.admin'
     
 });
