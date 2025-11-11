@@ -48,6 +48,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/user/riwayat', function () {
         return view('user.riwayat');
     })->name('riwayat');
+    
+    Route::get('/user/search', function () {
+        return view('user.search');
+    })->name('search');
+
+     Route::get('/user/detail', function () {
+        return view('user.detail');
+    })->name('detail');
 
     // ✅ RUTE PEMESANAN TIKET (INI UNTUK USER, BUKAN ADMIN)
     Route::get('/pesan-tiket/{title}', [TicketController::class, 'show'])->name('pesan.tiket');
