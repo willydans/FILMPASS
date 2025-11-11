@@ -8,8 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User; // <-- Ini sudah benar
 
-// 1. UBAH NAMA CLASS AGAR SESUAI RUTE
-class AdminAuthController extends Controller 
+
+class AdminAuthController extends Controller
 {
     public function showLoginForm()
     {
