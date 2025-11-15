@@ -19,11 +19,19 @@ class Film extends Model
     protected $fillable = [
         'title',
         'description',
+        'genre',
         'poster_path',      // Path file yang disimpan dari upload
         'duration_minutes',
         'release_date',
         'rating',
     ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = ['image', 'duration'];
 
     /**
      * Tipe data bawaan (casts) untuk atribut.
@@ -49,13 +57,11 @@ class Film extends Model
 
     /**
      * ACCESOR (Atribut Tambahan):
-     * Membuat atribut virtual 'poster_url' secara otomatis.
-     * * Saat Anda memanggil $film->poster_url di Controller atau View,
-     * fungsi ini akan otomatis dijalankan.
+     * Membuat atribut virtual 'image' secara otomatis.
      *
      * @return string
      */
-    public function getPosterUrlAttribute()
+    public function getImageAttribute()
     {
         // Cek apakah 'poster_path' (kolom di DB) ada isinya dan tidak null
         if ($this->poster_path) {
@@ -66,7 +72,22 @@ class Film extends Model
         }
 
         // Jika tidak ada poster, kembalikan gambar placeholder
-        // Ini akan membuat placeholder seperti "https://.../text=Spider-Man"
         return 'https://placehold.co/300x450/2A2A2A/FFF?text=' . urlencode($this->title);
+    }
+
+    /**
+     * ACCESOR (Atribut Tambahan):
+     * Membuat atribut virtual 'duration' dari 'duration_minutes'.
+     *
+     * @return string
+     */
+    public function getDurationAttribute()
+    {
+        if (!$this->duration_minutes) {
+            return 'N/A';
+        }
+        $hours = floor($this->duration_minutes / 60);
+        $minutes = $this->duration_minutes % 60;
+        return "{$hours}j {$minutes}m";
     }
 }

@@ -12,14 +12,16 @@
             <p class="text-gray-500">Kelola studio bioskop dan fasilitas</p>
         </div>
         <div>
-            <a href="{{ route('admin.studios.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md flex items-center w-full md:w-auto transition duration-150">
+            {{-- ✅ Tombol tambah studio --}}
+            <a href="{{ route('admin.studios.create') }}" 
+               class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md flex items-center w-full md:w-auto transition duration-150">
                 <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
                 Tambah Studio
             </a>
         </div>
     </div>
 
-    {{-- Tampilkan pesan sukses/error --}}
+    {{-- ✅ Pesan sukses / error --}}
     @if (session('success'))
         <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
             {{ session('success') }}
@@ -31,6 +33,7 @@
         </div>
     @endif
 
+    {{-- ✅ Filter dan tombol fasilitas --}}
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0 p-4 bg-white rounded-lg shadow-sm">
         
         <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
@@ -40,7 +43,8 @@
                        class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-600 focus:border-blue-600">
             </div>
             <div class="relative">
-                <select id="filter-tipe" class="appearance-none block w-full bg-white border border-gray-300 py-2 pl-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-blue-600 cursor-pointer">
+                <select id="filter-tipe" 
+                        class="appearance-none block w-full bg-white border border-gray-300 py-2 pl-4 pr-8 rounded-lg leading-tight focus:outline-none focus:border-blue-600 cursor-pointer">
                     <option value="Semua">Semua Tipe</option>
                     @foreach ($studios->pluck('type')->unique() as $type)
                         <option value="{{ $type }}">{{ $type }}</option>
@@ -60,17 +64,11 @@
         </div>
     </div>
 
+    {{-- ✅ GRID daftar studio --}}
     <div id="studio-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        
         @forelse ($studios as $studio)
-            {{-- 
-              PERBAIKAN OKUPANSI 1: 
-              Lakukan perhitungan di sini menggunakan data dari controller
-              'bookings_sum_seat_count' adalah properti baru dari withSum()
-            --}}
             @php
                 $kursiTerjual = $studio->bookings_sum_seat_count ?? 0;
-                // Hitung okupansi HANYA jika kapasitas > 0
                 $okupansi = ($studio->capacity > 0) ? ($kursiTerjual / $studio->capacity) * 100 : 0;
             @endphp
         
@@ -108,7 +106,6 @@
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-gray-500">Okupansi</span>
-                            {{-- PERBAIKAN OKUPANSI 2: Tampilkan persentase yang benar --}}
                             <span class="font-semibold text-gray-900">{{ round($okupansi) }}%</span> 
                         </div>
                     </div>
@@ -116,11 +113,9 @@
                     <div class="mb-4">
                         <div class="flex justify-between text-xs mb-1">
                             <span class="text-gray-500">Tingkat Okupansi</span>
-                            {{-- PERBAIKAN OKUPANSI 3: Tampilkan persentase yang benar --}}
                             <span class="font-medium text-gray-600">{{ round($okupansi) }}%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-1.5">
-                            {{-- PERBAIKAN OKUPANSI 4: Atur 'width' progress bar --}}
                             <div class="bg-yellow-500 h-1.5 rounded-full" style="width: {{ $okupansi }}%"></div> 
                         </div>
                     </div>
@@ -147,21 +142,19 @@
                 </div>
 
                 <div class="flex justify-start space-x-2 items-center mt-6 border-t pt-4">
-                    <a href="{{ route('admin.studios.edit', $studio->id) }}" class="text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 font-medium py-1.5 px-3 rounded-md flex items-center transition">
+                    {{-- ✅ Tombol Edit --}}
+                    <a href="{{ route('admin.studios.edit', $studio->id) }}" 
+                       class="text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 font-medium py-1.5 px-3 rounded-md flex items-center transition">
                         <i data-lucide="square-pen" class="w-4 h-4 mr-1"></i>
                         Edit
                     </a>
                     
-                    {{-- 
-                      PERBAIKAN TOMBOL MAINTENANCE:
-                      Bungkus tombol dengan <form> yang mengarah ke rute 'toggleStatus'
-                    --}}
+                    {{-- ✅ Tombol Maintenance --}}
                     <form action="{{ route('admin.studios.toggleStatus', $studio->id) }}" method="POST">
                         @csrf
-                        @method('PATCH') {{-- Method harus PATCH agar sesuai dengan rute --}}
-                        
+                        @method('PATCH')
                         @if ($studio->status == 'Aktif')
-                            <button typeG="submit" class="text-sm text-yellow-600 bg-yellow-50 hover:bg-yellow-100 font-medium py-1.5 px-3 rounded-md flex items-center transition">
+                            <button type="submit" class="text-sm text-yellow-600 bg-yellow-50 hover:bg-yellow-100 font-medium py-1.5 px-3 rounded-md flex items-center transition">
                                 <i data-lucide="wrench" class="w-4 h-4 mr-1"></i>
                                 Maintenance
                             </button>
@@ -173,10 +166,12 @@
                         @endif
                     </form>
                     
-                    <form action="{{ route('admin.studios.destroy', $studio->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus studio ini?');">
+                    {{-- ✅ Tombol Hapus --}}
+                    <form action="{{ route('admin.studios.destroy', $studio->id) }}" method="POST" 
+                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus studio ini?');">
                         @csrf
                         @method('DELETE')
-                        <button type-="submit" class="text-sm text-red-600 bg-red-50 hover:bg-red-100 font-medium py-1.5 px-3 rounded-md flex items-center transition">
+                        <button type="submit" class="text-sm text-red-600 bg-red-50 hover:bg-red-100 font-medium py-1.5 px-3 rounded-md flex items-center transition">
                             <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i>
                             Hapus
                         </button>
@@ -190,9 +185,8 @@
             </p>
         @endforelse
     </div>
-    
-    
-    {{-- MODAL UNTUK MENGELOLA FASILITAS (Tidak Berubah) --}}
+
+    {{-- ✅ Modal Kelola Fasilitas --}}
     <div x-show="showFacilityModal" 
          class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
          @click.away="showFacilityModal = false"
@@ -207,7 +201,6 @@
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
                 <div>
                     <h3 class="text-lg font-semibold text-gray-800 mb-3">Tambah Fasilitas Baru</h3>
                     <form action="{{ route('admin.facilities.store') }}" method="POST">
@@ -232,7 +225,8 @@
                         @forelse ($facilities as $facility)
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-800">{{ $facility->name }}</span>
-                                <form action="{{ route('admin.facilities.destroy', $facility->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus fasilitas ini? Ini akan menghapusnya dari semua studio.');">
+                                <form action="{{ route('admin.facilities.destroy', $facility->id) }}" method="POST" 
+                                      onsubmit="return confirm('Yakin ingin menghapus fasilitas ini? Ini akan menghapusnya dari semua studio.');">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-500 hover:text-red-700">
@@ -248,38 +242,26 @@
             </div>
         </div>
     </div>
-    
-</div> {{-- End div x-data --}}
-    
+</div> {{-- end x-data --}}
 @endsection
 
 @push('scripts')
 <script>
-    // Pastikan ikon dirender setelah Blade selesai
     lucide.createIcons();
 
-    // Fungsi filter sederhana (client-side)
+    // filter studio
     function filterStudios() {
-        const searchQuery = document.getElementById('search-studio').value.toLowerCase();
-        const filterType = document.getElementById('filter-tipe').value;
-        const studioCards = document.querySelectorAll('.studio-card');
-
-        studioCards.forEach(card => {
-            const nameDesc = card.getAttribute('data-name');
-            const type = card.getAttribute('data-type');
-
-            const matchesSearch = nameDesc.includes(searchQuery);
-            const matchesType = (filterType === 'Semua') || (type === filterType);
-
-            if (matchesSearch && matchesType) {
-                card.style.display = 'flex';
-            } else {
-                card.style.display = 'none';
-            }
+        const search = document.getElementById('search-studio').value.toLowerCase();
+        const type = document.getElementById('filter-tipe').value;
+        document.querySelectorAll('.studio-card').forEach(card => {
+            const name = card.dataset.name;
+            const cardType = card.dataset.type;
+            const matchSearch = name.includes(search);
+            const matchType = type === 'Semua' || cardType === type;
+            card.style.display = (matchSearch && matchType) ? 'flex' : 'none';
         });
     }
 
-    // Pasang listener ke input
     document.getElementById('search-studio').addEventListener('input', filterStudios);
     document.getElementById('filter-tipe').addEventListener('change', filterStudios);
 </script>

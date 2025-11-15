@@ -7,8 +7,8 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StudioController;
 use App\Http\Controllers\Admin\ScheduleController; 
 use App\Http\Controllers\Admin\FacilityController;
-use App\Http\Controllers\Admin\AdminAuthController;
-use App\Http\Controllers\Admin\FilmController;
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\FilmController;
 
 // 2. IMPORT CONTROLLER AUTH
 use App\Http\Controllers\Auth\AuthController;
@@ -48,14 +48,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/user/riwayat', function () {
         return view('user.riwayat');
     })->name('riwayat');
-    
-    Route::get('/user/search', function () {
-        return view('user.search');
-    })->name('search');
-
-     Route::get('/user/detail', function () {
-        return view('user.detail');
-    })->name('detail');
 
     // ✅ RUTE PEMESANAN TIKET (INI UNTUK USER, BUKAN ADMIN)
     Route::get('/pesan-tiket/{title}', [TicketController::class, 'show'])->name('pesan.tiket');
@@ -79,6 +71,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         
         // Manajemen Film
         Route::resource('/films', FilmController::class);
+        Route::patch('/films/{film}/toggle-status', [FilmController::class, 'toggleStatus'])->name('films.toggleStatus');
         
         // Manajemen Studio
         Route::resource('/studios', StudioController::class);

@@ -50,6 +50,58 @@ class FilmController extends Controller
 
     // Nanti Anda juga akan butuh fungsi lain di sini:
     // public function index() { ... }     // Untuk menampilkan semua film
+    public function index()
+    {
+        $films = Film::all();
+        return view('admin.films', compact('films'));
+    }
+
+    public function create()
+    {
+        return view('admin.films_create');
+    }
+
+    public function edit(Film $film)
+    {
+        return view('admin.films_edit', compact('film'));
+    }
+
+    public function update(Request $request, Film $film)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'poster_file' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'description' => 'nullable|string',
+            'genre' => 'nullable|string',
+            'duration_minutes' => 'required|integer',
+            'release_date' => 'nullable|date',
+            'rating' => 'nullable|string',
+        ]);
+
+        $film->fill($request->except('poster_file'));
+
+        if ($request->hasFile('poster_file')) {
+            // Hapus poster lama jika ada
+            if ($film->poster_path) {
+                Storage::disk('public')->delete($film->poster_path);
+            }
+            // Simpan poster baru
+            $path = $request->file('poster_file')->store('posters', 'public');
+            $film->poster_path = $path;
+        }
+
+        $film->save();
+
+        return redirect()->route('admin.films.index')->with('success', 'Film berhasil diperbarui!');
+    }
+
+    public function toggleStatus(Film $film)
+    {
+        $film->status = ($film->status === 'active') ? 'inactive' : 'active';
+        $film->save();
+
+        return redirect()->route('admin.films.index')->with('success', 'Status film berhasil diubah!');
+    }
     // public function create() { ... }    // Untuk menampilkan form tambah film
     // public function edit(Film $film) { ... }  // Untuk menampilkan form edit
     // public function update(Request $request, Film $film) { ... } // Untuk menyimpan editan

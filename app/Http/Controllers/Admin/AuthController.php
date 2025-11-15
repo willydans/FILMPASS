@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User; // <-- Ini sudah benar
 
 // 1. UBAH NAMA CLASS AGAR SESUAI RUTE
-class AdminAuthController extends Controller 
+class AuthController extends Controller
 {
     public function showLoginForm()
     {
