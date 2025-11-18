@@ -12,21 +12,15 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    /**
-     * Menampilkan halaman dashboard admin dengan data.
-     */
     public function index()
     {
-        // 1. Ambil Data untuk Kartu Statistik
+        // 1. DATA STATISTIK UTAMA
         $totalFilm = Film::count();
         $totalPemesanan = Booking::where('booking_status', 'confirmed')->count();
         $totalPendapatan = Booking::where('booking_status', 'confirmed')->sum('total_price');
-        
-        // Menghitung pengguna (selain admin dan kasir)
         $totalPengguna = User::where('role', 'user')->count();
 
-        // 2. Ambil Data untuk "Penjualan Mingguan"
-        // Ini adalah query yang lebih kompleks untuk mengambil data 7 hari terakhir
+        // 2. DATA PENJUALAN MINGGUAN (Grafik)
         $salesData = Booking::select(
                 DB::raw('DATE(created_at) as tanggal'),
                 DB::raw('SUM(total_price) as total')
@@ -37,18 +31,14 @@ class DashboardController extends Controller
             ->orderBy('tanggal', 'asc')
             ->get();
             
-        // Format data untuk chart (dengan nama hari dalam Bahasa Indonesia)
         $penjualanMingguan = [];
-        $maxSales = $salesData->max('total') ?: 1; // Hindari pembagian dengan nol
+        $maxSales = $salesData->max('total') ?: 1;
 
-        // Inisialisasi 7 hari terakhir
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::now()->subDays($i);
-            $dayName = $date->locale('id')->isoFormat('ddd'); // 'Sen', 'Sel', 'Rab', ...
+            $dayName = $date->locale('id')->isoFormat('ddd'); 
             
-            // Cari data penjualan untuk hari ini
             $sale = $salesData->firstWhere('tanggal', $date->format('Y-m-d'));
-            
             $total = $sale ? $sale->total : 0;
             
             $penjualanMingguan[] = [
@@ -58,13 +48,17 @@ class DashboardController extends Controller
             ];
         }
 
-        // 3. Kirim semua data ke view
+        // 3. DATA FILM POPULER (BARU)
+        // Mengambil 6 film secara acak untuk ditampilkan di dashboard
+        $popularFilms = Film::inRandomOrder()->take(6)->get();
+
         return view('admin.dashboard', [
             'totalFilm' => $totalFilm,
             'totalPemesanan' => $totalPemesanan,
             'totalPendapatan' => $totalPendapatan,
             'totalPengguna' => $totalPengguna,
-            'penjualanMingguan' => $penjualanMingguan
+            'penjualanMingguan' => $penjualanMingguan,
+            'popularFilms' => $popularFilms // <-- Kirim data ini
         ]);
     }
 }

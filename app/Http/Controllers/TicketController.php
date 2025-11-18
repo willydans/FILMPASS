@@ -3,99 +3,80 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Film;
+use App\Models\Schedule;
+use App\Models\Booking;
+use Illuminate\Support\Facades\Auth;
 
 class TicketController extends Controller
 {
-    // Data film (nantinya bisa dari database)
-    private $movies = [
-        "Avengers: Endgame" => [
-            "title" => "Avengers: Endgame",
-            "genre" => "Action",
-            "duration" => "3j 2m",
-            "image" => "https://image.tmdb.org/t/p/w500/ulzhLuWrPK07P1YkdWQLZnQh1JL.jpg",
-            "description" => "Para Avengers bersatu menghadapi Thanos demi menyelamatkan alam semesta.",
-            "price" => 50000
-        ],
-        "Joker" => [
-            "title" => "Joker",
-            "genre" => "Drama",
-            "duration" => "2j 2m",
-            "image" => "https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg",
-            "description" => "Kisah hidup Arthur Fleck yang berubah menjadi Joker.",
-            "price" => 45000
-        ],
-        "Spider-Man: No Way Home" => [
-            "title" => "Spider-Man: No Way Home",
-            "genre" => "Action",
-            "duration" => "2j 28m",
-            "image" => "https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg",
-            "description" => "Peter Parker menghadapi ancaman multiverse setelah identitasnya terbongkar.",
-            "price" => 50000
-        ],
-        "Interstellar" => [
-            "title" => "Interstellar",
-            "genre" => "Sci-Fi",
-            "duration" => "2j 49m",
-            "image" => "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
-            "description" => "Sekelompok astronot menjelajahi ruang-waktu demi menyelamatkan umat manusia.",
-            "price" => 55000
-        ],
-        "The Conjuring" => [
-            "title" => "The Conjuring",
-            "genre" => "Horror",
-            "duration" => "1j 52m",
-            "image" => "https://image.tmdb.org/t/p/w500/wVYREutTvI2tmxr6ujrHT704wGF.jpg",
-            "description" => "Penyelidikan Ed dan Lorraine Warren terhadap rumah berhantu.",
-            "price" => 40000
-        ]
-        // Tambahkan film lainnya sesuai kebutuhan
-    ];
-
-    public function show($title)
+    /**
+     * Menampilkan daftar semua film (untuk halaman /movies)
+     */
+    public function index()
     {
-        // Decode URL dan cari film
-        $movieTitle = urldecode($title);
+        $films = Film::orderBy('title', 'asc')->get();
+        return view('movies', ['films' => $films]);
+    }
+
+    /**
+     * Menampilkan halaman pesan tiket (Pilih Jadwal)
+     * @param int $filmId
+     */
+    public function create($filmId)
+    {
+        // 1. Ambil film dari database
+        $film = Film::findOrFail($filmId);
         
-        if (!isset($this->movies[$movieTitle])) {
-            abort(404, 'Film tidak ditemukan');
+        // 2. Ambil semua jadwal untuk film ini yang belum lewat
+        // Kita juga load relasi 'studio' agar bisa menampilkan nama bioskop
+        $schedules = Schedule::with('studio')
+            ->where('film_id', $filmId)
+            ->where('start_time', '>', now()) // Hanya jadwal masa depan
+            ->orderBy('start_time', 'asc')
+            ->get();
+        
+        // Jika tidak ada jadwal, beri pesan
+        if ($schedules->isEmpty()) {
+            return redirect()->back()->with('error', 'Maaf, belum ada jadwal tayang untuk film ini.');
         }
-        
-        $movie = $this->movies[$movieTitle];
-        
-        // Data jadwal (contoh)
-        $schedules = [
-            '2025-11-08' => ['10:00', '13:00', '16:00', '19:00', '21:30'],
-            '2025-11-09' => ['10:00', '13:00', '16:00', '19:00', '21:30'],
-            '2025-11-10' => ['10:00', '13:00', '16:00', '19:00', '21:30']
-        ];
-        
-        // Cinema locations
-        $cinemas = [
-            'XXI Bandar Lampung Central',
-            'CGV Grand Mall',
-            'Cinepolis Kartini',
-            'XXI Boemi Kedaton'
-        ];
-        
-        return view('pesan-tiket', compact('movie', 'schedules', 'cinemas'));
+
+        // Kirim data ke view
+        return view('pesan_tiket', [
+            'film' => $film,
+            'schedules' => $schedules
+        ]);
     }
     
+    /**
+     * Memproses pemesanan tiket
+     */
     public function store(Request $request)
     {
+        // 1. Validasi Input
         $validated = $request->validate([
-            'movie_title' => 'required|string',
-            'cinema' => 'required|string',
-            'date' => 'required|date',
-            'time' => 'required|string',
-            'seats' => 'required|integer|min:1|max:10',
-            'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'phone' => 'required|string'
+            'schedule_id' => 'required|exists:schedules,id',
+            'seat_count' => 'required|integer|min:1|max:10',
+        ]);
+
+        // 2. Ambil detail jadwal untuk menghitung harga
+        $schedule = Schedule::findOrFail($validated['schedule_id']);
+        
+        // 3. Hitung Total Harga
+        $totalPrice = $schedule->price * $validated['seat_count'];
+
+        // 4. Simpan Booking ke Database
+        // Pastikan user sudah login (middleware 'auth' di rute menangani ini)
+        $booking = Booking::create([
+            'schedule_id' => $schedule->id,
+            'user_id' => Auth::id(),
+            'seat_count' => $validated['seat_count'],
+            'total_price' => $totalPrice,
+            'booking_status' => 'confirmed', // Langsung konfirmasi untuk demo
         ]);
         
-        // Simpan ke database atau session
-        // Untuk sementara redirect dengan pesan sukses
-        
-        return redirect()->back()->with('success', 'Pemesanan tiket berhasil! Kode booking Anda: ' . strtoupper(substr(md5(time()), 0, 8)));
+        // 5. Redirect ke halaman Riwayat dengan pesan sukses
+        return redirect()->route('riwayat.detail', $booking->id)
+                         ->with('success', 'Pemesanan tiket berhasil!');
     }
 }

@@ -2,13 +2,15 @@
 
 use Illuminate\Support\Facades\Route;
 
-// 1. IMPORT SEMUA CONTROLLER ANDA
+// 1. IMPORT SEMUA CONTROLLER
 use App\Http\Controllers\FilmController;
+use App\Http\Controllers\HistoryController;
+use App\Http\Controllers\TicketController; // <-- TAMBAHAN BARU (PENTING!)
+use App\Http\Controllers\Auth\AuthController; 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StudioController;
 use App\Http\Controllers\Admin\ScheduleController; 
 use App\Http\Controllers\Admin\FacilityController;
-use App\Http\Controllers\Auth\AuthController; // Pastikan namespace ini benar
 use App\Http\Controllers\Admin\AdminAuthController;
 
 /*
@@ -18,8 +20,7 @@ use App\Http\Controllers\Admin\AdminAuthController;
 */
 
 // === Rute Publik (Guest) ===
-// Rute ini HANYA bisa diakses oleh user yang BELUM LOGIN.
-// 'guest' adalah alias untuk middleware 'RedirectIfAuthenticated' yang baru kita edit.
+// Hanya bisa diakses oleh user yang BELUM LOGIN
 Route::middleware(['guest'])->group(function () {
     
     Route::get('/', function () {
@@ -36,26 +37,34 @@ Route::middleware(['guest'])->group(function () {
 
 
 // === Rute Pengguna (Harus Login) ===
-// Rute ini HANYA bisa diakses oleh user yang SUDAH LOGIN
+// Hanya bisa diakses oleh user yang SUDAH LOGIN (role 'user' biasa)
 Route::middleware(['auth'])->group(function () {
+    
     Route::get('dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
 
-    Route::get('/movies', function () {
-        return view('movies');
-    });
+    // --- FITUR FILM & PEMESANAN TIKET (BARU) ---
+    
+    // 1. Daftar Semua Film (Dinamis dari DB)
+    Route::get('/movies', [TicketController::class, 'index'])->name('movies.index');
 
-    Route::get('/user/riwayat', function () {
-        return view('user.riwayat');
-    })->name('riwayat');
-;
+    // 2. Form Pesan Tiket (Pilih Jadwal)
+    Route::get('/pesan-tiket/{film}', [TicketController::class, 'create'])->name('ticket.create');
 
-    Route::get('/user/detail', function () {
-        return view('user.detail');
-    })->name('detail');
+    // 3. Proses Simpan Pemesanan (Checkout)
+    Route::post('/pesan-tiket', [TicketController::class, 'store'])->name('ticket.store');
 
-     // Rute Logout (harus login untuk bisa logout)
+
+    // --- FITUR RIWAYAT & DETAIL TIKET ---
+    
+    // 1. Menampilkan daftar riwayat
+    Route::get('/user/riwayat', [HistoryController::class, 'index'])->name('riwayat');
+
+    // 2. Menampilkan detail tiket spesifik (E-Ticket)
+    Route::get('/user/riwayat/{id}', [HistoryController::class, 'show'])->name('riwayat.detail');
+
+    // Rute Logout
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 });
 
@@ -74,23 +83,24 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     //
     // --- RUTE ADMIN UTAMA (DIAMANKAN) ---
-    // User harus login DAN memiliki role 'admin'/'kasir' untuk mengakses ini
-    // (Asumsi Anda sudah membuat middleware 'role.admin' dari langkah kita sebelumnya)
+    // User harus login DAN memiliki role 'admin'/'kasir'
     //
     Route::middleware(['auth', 'role.admin'])->group(function () {
     
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         
-        Route::resource('/films', FilmController::class);
+        Route::resource('/films', FilmController::class); // Admin Film Controller (beda dengan user)
         
         Route::resource('/studios', StudioController::class);
+        // Rute khusus untuk tombol Maintenance/Aktifkan
         Route::patch('/studios/{studio}/toggle-status', [StudioController::class, 'toggleStatus'])->name('studios.toggleStatus');
 
         Route::resource('/schedules', ScheduleController::class);
 
+        // Rute Fasilitas (Hanya untuk modal)
         Route::post('/facilities', [FacilityController::class, 'store'])->name('facilities.store');
         Route::delete('/facilities/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
     
-    }); // Akhir dari grup middleware 'auth' & 'role.admin'
+    }); 
     
 });
