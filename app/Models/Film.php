@@ -4,44 +4,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage; // <-- PENTING: Tambahkan ini
+use Illuminate\Support\Facades\Storage; // PENTING: Untuk akses file storage
 
 class Film extends Model
 {
     use HasFactory;
 
-    /**
-     * Atribut yang dapat diisi secara massal (mass assignable).
-     * Ini adalah kolom-kolom dari form 'Tambah Film' Anda.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'title',
         'description',
         'genre',
-        'poster_path',      // Path file yang disimpan dari upload
+        'poster_path',
+        'trailer_url', // <-- Pastikan ini ada untuk fitur trailer
         'duration_minutes',
         'release_date',
         'rating',
     ];
 
-    /**
-     * Tipe data bawaan (casts) untuk atribut.
-     * Ini akan otomatis mengubah string 'release_date' dari database
-     * menjadi objek Carbon (objek tanggal) yang bisa Anda format.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'release_date' => 'date',
     ];
 
     /**
-     * RELASI: Mendapatkan semua jadwal tayang untuk film ini.
-     *
-     * Ini adalah relasi one-to-many:
-     * Satu film (Film) memiliki banyak (hasMany) jadwal (Schedules).
+     * Relasi ke Jadwal (One to Many)
      */
     public function schedules()
     {
@@ -49,25 +34,33 @@ class Film extends Model
     }
 
     /**
-     * ACCESOR (Atribut Tambahan):
-     * Membuat atribut virtual 'poster_url' secara otomatis.
-     * * Saat Anda memanggil $film->poster_url di Controller atau View,
-     * fungsi ini akan otomatis dijalankan.
-     *
-     * @return string
+     * Accessor: URL Poster Otomatis ($film->poster_url)
+     * Mengubah path 'posters/file.jpg' menjadi URL lengkap
      */
     public function getPosterUrlAttribute()
     {
-        // Cek apakah 'poster_path' (kolom di DB) ada isinya dan tidak null
         if ($this->poster_path) {
-            
-            // Mengembalikan URL publik yang bisa diakses
-            // (Hasil dari 'php artisan storage:link')
             return Storage::url($this->poster_path);
         }
 
-        // Jika tidak ada poster, kembalikan gambar placeholder
-        // Ini akan membuat placeholder seperti "https://.../text=Spider-Man"
+        // Placeholder jika tidak ada gambar
         return 'https://placehold.co/300x450/2A2A2A/FFF?text=' . urlencode($this->title);
+    }
+
+    /**
+     * Accessor: URL Embed YouTube ($film->trailer_embed_url)
+     * Mengubah link YouTube biasa menjadi format embed iframe
+     */
+    public function getTrailerEmbedUrlAttribute()
+    {
+        if (!$this->trailer_url) return null;
+
+        $url = $this->trailer_url;
+        
+        // Handle short URL (youtu.be/ID)
+        $url = preg_replace('/youtu\.be\/(.*)/', 'youtube.com/watch?v=$1', $url);
+        
+        // Handle standard URL (watch?v=ID) -> embed/ID
+        return preg_replace('/watch\?v=([^&]*).*/', 'embed/$1', $url);
     }
 }

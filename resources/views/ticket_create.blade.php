@@ -85,21 +85,29 @@
                         </p>
                     </section>
 
-                    {{-- Section Trailer (Placeholder Youtube) --}}
+                    {{-- Section Trailer (UPDATE: Menampilkan YouTube) --}}
                     <section>
                         <h3 class="text-xl font-bold text-white mb-4 border-l-4 border-indigo-500 pl-3">Trailer</h3>
-                        <div class="aspect-video bg-black rounded-2xl overflow-hidden shadow-lg relative group cursor-pointer">
-                             {{-- Dummy Iframe / Gambar --}}
-                             <img src="https://placehold.co/800x450/000/FFF?text=Trailer+Placeholder" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition">
-                             <div class="absolute inset-0 flex items-center justify-center">
-                                 <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition transform">
-                                     <i data-lucide="play" class="w-8 h-8 text-white fill-current"></i>
+                        <div class="aspect-video bg-black rounded-2xl overflow-hidden shadow-lg relative group">
+                             @if($film->trailer_embed_url)
+                                <iframe class="w-full h-full" 
+                                        src="{{ $film->trailer_embed_url }}" 
+                                        title="YouTube video player" 
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                        allowfullscreen>
+                                </iframe>
+                             @else
+                                 {{-- Fallback jika tidak ada trailer --}}
+                                 <img src="https://placehold.co/800x450/000/FFF?text=Trailer+Tidak+Tersedia" class="w-full h-full object-cover opacity-50">
+                                 <div class="absolute inset-0 flex items-center justify-center">
+                                     <p class="text-gray-400">Trailer belum tersedia</p>
                                  </div>
-                             </div>
+                             @endif
                         </div>
                     </section>
 
-                    {{-- Section Jadwal Tayang (SINKRON DB) --}}
+                    {{-- Section Jadwal Tayang --}}
                     <section id="jadwal">
                         <h3 class="text-xl font-bold text-white mb-6 border-l-4 border-indigo-500 pl-3">Jadwal Tayang</h3>
 
@@ -141,7 +149,7 @@
                                             Rp {{ number_format($schedule->price, 0, ',', '.') }}
                                         </div>
                                         
-                                        {{-- UBAH DISINI: Link ke Halaman Pilih Kursi --}}
+                                        {{-- UPDATE: Link ke Halaman Pilih Kursi (Bukan Form Langsung) --}}
                                         <a href="{{ route('booking.seats', $schedule->id) }}" 
                                            class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg font-semibold shadow-md shadow-orange-500/20 transition-all transform group-hover:-translate-y-1 flex items-center">
                                             <i data-lucide="sofa" class="w-4 h-4 mr-2"></i>
@@ -199,7 +207,6 @@
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-lg">
                         <h4 class="font-bold text-slate-900 mb-4">Aksi Cepat</h4>
                         <div class="space-y-3">
-                            {{-- Link smooth scroll ke section jadwal --}}
                             <a href="#jadwal" class="block w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-center rounded-lg font-bold transition shadow-lg shadow-indigo-600/20">
                                 <i data-lucide="ticket" class="w-4 h-4 inline mr-2"></i> Pesan Tiket
                             </a>

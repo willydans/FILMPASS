@@ -35,6 +35,7 @@
         <form action="{{ route('admin.films.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
             @csrf
 
+            <!-- Judul Film -->
             <div>
                 <label for="title" class="block text-sm font-semibold text-gray-700 mb-2">
                     Judul Film <span class="text-red-500">*</span>
@@ -44,6 +45,23 @@
                     placeholder="Contoh: Spider-Man: No Way Home">
             </div>
 
+            <!-- Trailer URL (BARU) -->
+            <div>
+                <label for="trailer_url" class="block text-sm font-semibold text-gray-700 mb-2">
+                    Link Trailer YouTube
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i data-lucide="youtube" class="h-5 w-5 text-gray-400"></i>
+                    </div>
+                    <input type="url" id="trailer_url" name="trailer_url" value="{{ old('trailer_url') }}"
+                        class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Masukkan link lengkap video YouTube (opsional)</p>
+            </div>
+
+            <!-- Input Genre (Multi Select Checkbox) -->
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
                     Genre <span class="text-red-500">*</span> <span class="text-xs font-normal text-gray-500">(Bisa pilih lebih dari satu)</span>
@@ -66,6 +84,7 @@
                 </div>
             </div>
 
+            <!-- Poster Film -->
             <div>
                 <label for="poster_file" class="block text-sm font-semibold text-gray-700 mb-2">
                     Poster Film <span class="text-red-500">*</span>
@@ -88,6 +107,7 @@
                 </div>
             </div>
 
+            <!-- Deskripsi -->
             <div>
                 <label for="description" class="block text-sm font-semibold text-gray-700 mb-2">Deskripsi Film</label>
                 <textarea id="description" name="description" rows="4"
@@ -95,6 +115,7 @@
                     placeholder="Ceritakan tentang film ini...">{{ old('description') }}</textarea>
             </div>
 
+            <!-- Durasi & Rating -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label for="duration_minutes" class="block text-sm font-semibold text-gray-700 mb-2">
@@ -116,12 +137,14 @@
                 </div>
             </div>
 
+            <!-- Tanggal Rilis -->
             <div>
                 <label for="release_date" class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Rilis</label>
                 <input type="date" id="release_date" name="release_date" value="{{ old('release_date') }}"
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
             </div>
 
+            <!-- Tombol Aksi -->
             <div class="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
                 <a href="{{ route('admin.films.index') }}" class="px-6 py-2.5 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition duration-200">
                     Batal

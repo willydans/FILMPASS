@@ -19,7 +19,7 @@ class FilmController extends Controller
         $films = Film::when($search, function($query, $search) {
             return $query->where('title', 'like', "%{$search}%")
                          ->orWhere('description', 'like', "%{$search}%")
-                         ->orWhere('genre', 'like', "%{$search}%") // Tambahan search by genre
+                         ->orWhere('genre', 'like', "%{$search}%")
                          ->orWhere('rating', 'like', "%{$search}%");
         })
         ->orderBy('created_at', 'desc')
@@ -45,9 +45,10 @@ class FilmController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'poster_file' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'trailer_url' => 'nullable|url', // Validasi URL Youtube
             'description' => 'nullable|string',
-            'genre' => 'required|array', // Ubah jadi array
-            'genre.*' => 'string',       // Pastikan isinya string
+            'genre' => 'required|array',
+            'genre.*' => 'string',
             'duration_minutes' => 'required|integer|min:1',
             'release_date' => 'nullable|date',
             'rating' => 'required|string|max:10',
@@ -64,9 +65,9 @@ class FilmController extends Controller
         Film::create([
             'title' => $request->title,
             'description' => $request->description,
-            // Ubah Array Genre menjadi String dipisah koma (ex: "Action, Horror")
             'genre' => implode(', ', $request->genre), 
-            'poster_path' => $path, // Sesuaikan nama kolom di DB (poster_path atau poster_url)
+            'poster_path' => $path,
+            'trailer_url' => $request->trailer_url, // Simpan URL Trailer
             'duration_minutes' => $request->duration_minutes,
             'release_date' => $request->release_date,
             'rating' => $request->rating,
@@ -92,8 +93,9 @@ class FilmController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'poster_file' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'trailer_url' => 'nullable|url', // Validasi URL Youtube
             'description' => 'nullable|string',
-            'genre' => 'required|array', // Ubah jadi array
+            'genre' => 'required|array',
             'genre.*' => 'string',
             'duration_minutes' => 'required|integer|min:1',
             'release_date' => 'nullable|date',
@@ -104,8 +106,8 @@ class FilmController extends Controller
         $data = [
             'title' => $request->title,
             'description' => $request->description,
-            // Ubah Array Genre menjadi String lagi saat update
             'genre' => implode(', ', $request->genre),
+            'trailer_url' => $request->trailer_url, // Update URL Trailer
             'duration_minutes' => $request->duration_minutes,
             'release_date' => $request->release_date,
             'rating' => $request->rating,

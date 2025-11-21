@@ -69,7 +69,7 @@
                      Pemesanan
                 </a>
                 
-                <a href="#" class="flex items-center p-3 text-gray-600 hover:bg-gray-100 rounded-lg transition duration-150">
+                <a href="{{ route('admin.reports.index') }}" class="flex items-center p-3 text-gray-600 hover:bg-gray-100 rounded-lg transition duration-150">
                     <i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i>
                     Laporan
                 </a>
