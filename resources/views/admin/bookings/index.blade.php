@@ -4,13 +4,11 @@
 
 @section('content')
 
-<!-- Header -->
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 mb-2">Manajemen Pemesanan</h1>
     <p class="text-gray-600">Kelola semua pemesanan tiket bioskop</p>
 </div>
 
-<!-- Notifikasi -->
 @if(session('success'))
     <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded-lg flex items-start">
         <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -37,9 +35,8 @@
     </div>
 @endif
 
-<!-- Statistik Cards -->
+{{-- Statistik Cards --}}
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <!-- Total Pemesanan -->
     <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
         <div class="flex items-center justify-between">
             <div>
@@ -54,7 +51,6 @@
         </div>
     </div>
 
-    <!-- Dikonfirmasi -->
     <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
         <div class="flex items-center justify-between">
             <div>
@@ -69,7 +65,6 @@
         </div>
     </div>
 
-    <!-- Menunggu -->
     <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
         <div class="flex items-center justify-between">
             <div>
@@ -84,7 +79,6 @@
         </div>
     </div>
 
-    <!-- Total Pendapatan -->
     <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
         <div class="flex items-center justify-between">
             <div>
@@ -100,11 +94,10 @@
     </div>
 </div>
 
-<!-- Filter & Search -->
+{{-- Filter Form --}}
 <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200 mb-6">
     <form action="{{ route('admin.bookings.index') }}" method="GET" class="flex flex-col md:flex-row gap-4">
         
-        <!-- Search -->
         <div class="flex-1">
             <input 
                 type="text" 
@@ -115,7 +108,6 @@
             >
         </div>
 
-        <!-- Filter Status -->
         <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
             <option value="">Semua Status</option>
             <option value="pending" {{ $status == 'pending' ? 'selected' : '' }}>Menunggu</option>
@@ -123,7 +115,6 @@
             <option value="cancelled" {{ $status == 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
         </select>
 
-        <!-- Filter Tanggal -->
         <input 
             type="date" 
             name="date" 
@@ -131,7 +122,6 @@
             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
         >
 
-        <!-- Tombol -->
         <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition duration-200">
             Filter
         </button>
@@ -141,18 +131,7 @@
     </form>
 </div>
 
-<!-- Tombol Tambah -->
-<div class="flex justify-end mb-4">
-    <a href="{{ route('admin.bookings.create') }}" 
-       class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg inline-flex items-center shadow-md transition duration-200">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-        </svg>
-        Tambah Pemesanan
-    </a>
-</div>
-
-<!-- Tabel Pemesanan -->
+{{-- Tabel Data --}}
 <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
     <div class="overflow-x-auto">
         <table class="w-full">
@@ -160,9 +139,11 @@
                 <tr>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Pelanggan</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Film</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tanggal & Waktu</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Film & Jadwal</th>
+                    
+                    {{-- KOLOM BARU: Kursi --}}
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Kursi</th>
+                    
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Total</th>
                     <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                     <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
@@ -180,15 +161,21 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="text-sm font-medium text-gray-900">{{ $booking->schedule->film->title }}</div>
-                            <div class="text-xs text-gray-500">Studio: {{ $booking->schedule->studio->name }}</div>
+                            <div class="text-xs text-gray-500">
+                                {{ $booking->schedule->studio->name }} • {{ $booking->schedule->start_time->format('d/m H:i') }}
+                            </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ $booking->schedule->start_time->format('d/m/Y') }}</div>
-                            <div class="text-xs text-gray-500">{{ $booking->schedule->start_time->format('H:i') }}</div>
+                        
+                        {{-- Menampilkan Kursi --}}
+                        <td class="px-6 py-4 max-w-xs break-words">
+                            <div class="text-sm font-bold text-orange-600">
+                                {{ $booking->seats }}
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                ({{ $booking->seat_count }} Tiket)
+                            </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-semibold text-gray-900">{{ $booking->seat_count }}</span>
-                        </td>
+
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="text-sm font-semibold text-indigo-600">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</span>
                         </td>
@@ -203,7 +190,6 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <div class="flex justify-center space-x-2">
-                                <!-- Lihat Detail -->
                                 <a href="{{ route('admin.bookings.show', $booking->id) }}" 
                                    class="text-blue-600 hover:text-blue-800" title="Lihat Detail">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,7 +197,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                     </svg>
                                 </a>
-                                <!-- Hapus -->
                                 <form action="{{ route('admin.bookings.destroy', $booking->id) }}" 
                                       method="POST" 
                                       onsubmit="return confirm('Yakin ingin menghapus pemesanan ini?')">
@@ -240,7 +225,6 @@
         </table>
     </div>
 
-    <!-- Pagination -->
     <div class="px-6 py-4 border-t border-gray-200">
         {{ $bookings->links() }}
     </div>

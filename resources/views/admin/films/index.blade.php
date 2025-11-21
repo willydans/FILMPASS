@@ -5,13 +5,11 @@
 @section('content')
 <div class="max-w-7xl mx-auto">
     
-    <!-- Header Section -->
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">Manajemen Film</h1>
         <p class="text-gray-600">Kelola semua film yang tersedia di sistem</p>
     </div>
 
-    <!-- Notifikasi Success -->
     @if(session('success'))
         <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded-lg flex items-start">
             <svg class="w-5 h-5 text-green-500 mr-3 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -24,11 +22,9 @@
         </div>
     @endif
 
-    <!-- Search & Add Button -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             
-            <!-- Search Form -->
             <form method="GET" action="{{ route('admin.films.index') }}" class="flex-1 max-w-md">
                 <div class="relative">
                     <input 
@@ -44,7 +40,6 @@
                 </div>
             </form>
 
-            <!-- Add Button -->
             <a href="{{ route('admin.films.create') }}" 
                class="inline-flex items-center justify-center px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition duration-200">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,13 +50,11 @@
         </div>
     </div>
 
-    <!-- Films Grid -->
     @if($films->count() > 0)
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             @foreach($films as $film)
-                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300 flex flex-col">
                     
-                    <!-- Poster Film -->
                     <div class="relative aspect-[2/3] bg-gray-200 overflow-hidden">
                         @if($film->poster_path)
                             <img src="{{ asset('storage/' . $film->poster_path) }}" 
@@ -75,7 +68,6 @@
                             </div>
                         @endif
                         
-                        <!-- Rating Badge -->
                         @if($film->rating)
                             <div class="absolute top-3 right-3 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
                                 {{ $film->rating }}
@@ -83,12 +75,29 @@
                         @endif
                     </div>
 
-                    <!-- Film Info -->
-                    <div class="p-4">
-                        <h3 class="font-bold text-lg text-gray-900 mb-2 line-clamp-1">{{ $film->title }}</h3>
-                        <p class="text-sm text-gray-600 mb-3 line-clamp-2">{{ $film->description ?? 'Tidak ada deskripsi' }}</p>
+                    <div class="p-4 flex flex-col flex-1">
+                        <h3 class="font-bold text-lg text-gray-900 mb-2 line-clamp-1" title="{{ $film->title }}">{{ $film->title }}</h3>
                         
-                        <div class="flex items-center text-xs text-gray-500 mb-4 space-x-3">
+                        <div class="mb-3 flex flex-wrap gap-1">
+                            @if($film->genre)
+                                @foreach(explode(', ', $film->genre) as $index => $genre)
+                                    {{-- Tampilkan maksimal 3 genre agar tidak merusak layout, sisanya pakai +n --}}
+                                    @if($index < 3)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700">
+                                            {{ $genre }}
+                                        </span>
+                                    @endif
+                                @endforeach
+                                @if(count(explode(', ', $film->genre)) > 3)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                        +{{ count(explode(', ', $film->genre)) - 3 }}
+                                    </span>
+                                @endif
+                            @endif
+                        </div>
+                        <p class="text-sm text-gray-600 mb-4 line-clamp-2 flex-1">{{ $film->description ?? 'Tidak ada deskripsi' }}</p>
+                        
+                        <div class="flex items-center text-xs text-gray-500 mb-4 space-x-3 pt-2 border-t border-gray-100">
                             <span class="flex items-center">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -105,8 +114,7 @@
                             @endif
                         </div>
 
-                        <!-- Action Buttons -->
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 mt-auto">
                             <a href="{{ route('admin.films.edit', $film->id) }}" 
                                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-3 rounded-lg text-center transition duration-200">
                                 Edit
@@ -128,12 +136,10 @@
             @endforeach
         </div>
 
-        <!-- Pagination -->
         <div class="mt-8">
             {{ $films->links() }}
         </div>
     @else
-        <!-- Empty State -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <svg class="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>

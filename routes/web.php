@@ -3,15 +3,18 @@
 use Illuminate\Support\Facades\Route;
 
 // 1. IMPORT SEMUA CONTROLLER
+use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\FilmController;
 use App\Http\Controllers\HistoryController;
-use App\Http\Controllers\TicketController; // <-- TAMBAHAN BARU (PENTING!)
+use App\Http\Controllers\TicketController; 
 use App\Http\Controllers\Auth\AuthController; 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StudioController;
 use App\Http\Controllers\Admin\ScheduleController; 
 use App\Http\Controllers\Admin\FacilityController;
 use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\BookingController;
+use App\Http\Controllers\Admin\ReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,9 +26,7 @@ use App\Http\Controllers\Admin\AdminAuthController;
 // Hanya bisa diakses oleh user yang BELUM LOGIN
 Route::middleware(['guest'])->group(function () {
     
-    Route::get('/', function () {
-        return view('dashboard'); 
-    });
+    Route::get('/', [UserDashboardController::class, 'index'])->name('home'); 
 
     // Rute otentikasi pengguna
     Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -40,29 +41,30 @@ Route::middleware(['guest'])->group(function () {
 // Hanya bisa diakses oleh user yang SUDAH LOGIN (role 'user' biasa)
 Route::middleware(['auth'])->group(function () {
     
-    Route::get('dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
 
-    // --- FITUR FILM & PEMESANAN TIKET (BARU) ---
+    // --- FITUR FILM & PEMESANAN TIKET ---
     
-    // 1. Daftar Semua Film (Dinamis dari DB)
+    // 1. Daftar Semua Film
     Route::get('/movies', [TicketController::class, 'index'])->name('movies.index');
 
-    // 2. Form Pesan Tiket (Pilih Jadwal)
-    Route::get('/pesan-tiket/{film}', [TicketController::class, 'create'])->name('ticket.create');
+    // 2. Detail Film & Pilih Jadwal
+    Route::get('/movies/{film}', [TicketController::class, 'create'])->name('ticket.create');
 
-    // 3. Proses Simpan Pemesanan (Checkout)
-    Route::post('/pesan-tiket', [TicketController::class, 'store'])->name('ticket.store');
+    // 3. Pilih Kursi (Visual)
+    Route::get('/booking/seats/{schedule}', [TicketController::class, 'selectSeats'])->name('booking.seats');
+
+    // 4. Checkout & Pembayaran
+    Route::post('/booking/checkout', [TicketController::class, 'showCheckout'])->name('booking.checkout');
+
+    // 5. Proses Pembayaran
+    Route::post('/booking/process', [TicketController::class, 'processPayment'])->name('booking.process');
 
 
-    // --- FITUR RIWAYAT & DETAIL TIKET ---
-    
-    // 1. Menampilkan daftar riwayat
-    Route::get('/user/riwayat', [HistoryController::class, 'index'])->name('riwayat');
-
-    // 2. Menampilkan detail tiket spesifik (E-Ticket)
-    Route::get('/user/riwayat/{id}', [HistoryController::class, 'show'])->name('riwayat.detail');
+    // --- FITUR RIWAYAT ---
+    // URL dirapikan jadi /riwayat (tanpa /user di depannya)
+    Route::get('/riwayat', [HistoryController::class, 'index'])->name('riwayat');
+    Route::get('/riwayat/{id}', [HistoryController::class, 'show'])->name('riwayat.detail');
 
     // Rute Logout
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
@@ -78,40 +80,39 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('login', [AdminAuthController::class, 'login']);
     });
     
-    // Rute Logout Admin (Harus login untuk bisa logout)
+    // Rute Logout Admin
     Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout')->middleware('auth');
 
     //
-    // --- RUTE ADMIN UTAMA (DIAMANKAN) ---
-    // User harus login DAN memiliki role 'admin'/'kasir'
+    // --- RUTE ADMIN UTAMA ---
     //
     Route::middleware(['auth', 'role.admin'])->group(function () {
     
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         
-        Route::resource('/films', FilmController::class); // Admin Film Controller (beda dengan user)
+        Route::resource('/films', FilmController::class);
         
         Route::resource('/studios', StudioController::class);
-        // Rute khusus untuk tombol Maintenance/Aktifkan
         Route::patch('/studios/{studio}/toggle-status', [StudioController::class, 'toggleStatus'])->name('studios.toggleStatus');
 
         Route::resource('/schedules', ScheduleController::class);
 
-        // Rute Fasilitas (Hanya untuk modal)
+        // Rute Fasilitas
         Route::post('/facilities', [FacilityController::class, 'store'])->name('facilities.store');
         Route::delete('/facilities/{facility}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
 
-          // Manajemen Pemesanan (BARU)
-        Route::get('/bookings', [App\Http\Controllers\Admin\BookingController::class, 'index'])->name('bookings.index');
-        Route::get('/bookings/create', [App\Http\Controllers\Admin\BookingController::class, 'create'])->name('bookings.create');
-        Route::post('/bookings', [App\Http\Controllers\Admin\BookingController::class, 'store'])->name('bookings.store');
-        Route::get('/bookings/{booking}', [App\Http\Controllers\Admin\BookingController::class, 'show'])->name('bookings.show');
-        Route::patch('/bookings/{booking}/status', [App\Http\Controllers\Admin\BookingController::class, 'updateStatus'])->name('bookings.updateStatus');
-        Route::delete('/bookings/{booking}', [App\Http\Controllers\Admin\BookingController::class, 'destroy'])->name('bookings.destroy');
+        // Manajemen Pemesanan
+        Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
+        Route::get('/bookings/create', [BookingController::class, 'create'])->name('bookings.create');
+        Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
+        Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('bookings.show');
+        Route::patch('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('bookings.updateStatus');
+        Route::delete('/bookings/{booking}', [BookingController::class, 'destroy'])->name('bookings.destroy');
 
-        Route::get('/reports', [App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
-        Route::get('/reports/export-excel', [App\Http\Controllers\Admin\ReportController::class, 'exportExcel'])->name('reports.export.excel');
-        Route::get('/reports/export-pdf', [App\Http\Controllers\Admin\ReportController::class, 'exportPDF'])->name('reports.export.pdf');
+        // Laporan
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
+        Route::get('/reports/export-pdf', [ReportController::class, 'exportPDF'])->name('reports.export.pdf');
     
     }); 
     

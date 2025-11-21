@@ -19,6 +19,7 @@ class Film extends Model
     protected $fillable = [
         'title',
         'description',
+        'genre',
         'poster_path',      // Path file yang disimpan dari upload
         'duration_minutes',
         'release_date',

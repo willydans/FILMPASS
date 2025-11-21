@@ -60,7 +60,8 @@
                             </div>
 
                             {{-- Detail Tiket --}}
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-gray-300">
+                            {{-- Ubah grid menjadi 5 kolom di desktop agar muat untuk kursi --}}
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-gray-300">
                                 <div>
                                     <p class="text-sm font-medium text-gray-500">Tanggal Tayang</p>
                                     <p class="font-semibold">
@@ -82,7 +83,14 @@
                                 <div>
                                     <p class="text-sm font-medium text-gray-500">Total Tiket</p>
                                     <p class="font-semibold">
-                                        {{ $booking->seat_count }} Kursi
+                                        {{ $booking->seat_count }} Tiket
+                                    </p>
+                                </div>
+                                {{-- TAMBAHAN: Menampilkan Kursi --}}
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500">Nomor Kursi</p>
+                                    <p class="font-bold text-orange-400 break-words">
+                                        {{ $booking->seats }}
                                     </p>
                                 </div>
                             </div>
@@ -96,13 +104,9 @@
                                     </p>
                                 </div>
 
-                                {{-- 
-                                    PERBAIKAN UTAMA: 
-                                    Tombol Detail yang mengarah ke halaman E-Ticket 
-                                --}}
                                 <a href="{{ route('riwayat.detail', $booking->id) }}" 
                                    class="text-orange-400 hover:text-orange-300 transition-colors font-medium text-sm border-b border-orange-400 pb-0.5 hover:border-orange-300">
-                                    Lihat Detail Tiket &rarr;
+                                    Lihat E-Ticket &rarr;
                                 </a>
                             </div>
                         </div>

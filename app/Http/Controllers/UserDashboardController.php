@@ -7,25 +7,51 @@ use App\Models\Film;
 
 class UserDashboardController extends Controller
 {
-    public function index()
+    /**
+     * Menampilkan halaman beranda user (Dashboard)
+     * dengan data film dari database, fitur search, dan pagination.
+     */
+    public function index(Request $request)
     {
-        // 1. Ambil 3 Film Terbaru untuk Carousel (Featured)
-        // Anda bisa menambahkan kolom 'is_featured' di database nanti jika mau lebih spesifik
+        // 1. Ambil query pencarian dari URL (jika ada)
+        $search = $request->input('search');
+
+        // 2. Ambil 3 Film Terbaru untuk Carousel (Featured)
+        // Film terbaru ditampilkan di slider atas
         $featuredFilms = Film::latest()->take(3)->get();
 
-        // 2. Ambil 6 Film untuk bagian 'Film Populer'
-        // (Bisa diurutkan berdasarkan rating atau random)
-        $popularFilms = Film::inRandomOrder()->take(6)->get();
+        // 3. Siapkan Query untuk 'Film Populer' (List Bawah)
+        $query = Film::query();
 
-        // 3. Ambil Semua Genre Unik untuk filter
-        // Asumsi kolom 'rating' atau 'genre' (jika ada) digunakan untuk ini
-        // Jika belum ada kolom genre, kita bisa hardcode dulu atau pakai rating
-        $genres = ['Action', 'Drama', 'Sci-Fi', 'Romance', 'Comedy', 'Thriller']; 
+        // Jika ada pencarian, filter berdasarkan judul, genre, atau deskripsi
+        if ($search) {
+            $query->where('title', 'like', "%{$search}%")
+                  ->orWhere('genre', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+        }
+
+        // 4. Ambil data dengan Pagination (12 film per halaman)
+        // Menggunakan paginate() agar halaman tidak berat memuat semua film sekaligus
+        $popularFilms = $query->orderBy('created_at', 'desc')->paginate(12);
+
+        // 5. (Opsional) Data Genre Statis untuk navigasi cepat
+        // Ini dikirim jika Anda ingin menggunakannya di view, meski view sebelumnya hardcode icon
+        $genres = [
+            ['name' => 'Action', 'icon' => '💥'],
+            ['name' => 'Drama', 'icon' => '🎭'],
+            ['name' => 'Sci-Fi', 'icon' => '🚀'],
+            ['name' => 'Romance', 'icon' => '❤️'],
+            ['name' => 'Comedy', 'icon' => '😂'],
+            ['name' => 'Horror', 'icon' => '👻'],
+            ['name' => 'Thriller', 'icon' => '🔪'],
+            ['name' => 'Animation', 'icon' => '🎨']
+        ];
 
         return view('dashboard', [
             'featuredFilms' => $featuredFilms,
             'popularFilms' => $popularFilms,
-            'genres' => $genres
+            'genres' => $genres,
+            'search' => $search // Penting dikirim balik untuk input value di view
         ]);
     }
 }
