@@ -62,10 +62,11 @@
                     <i data-lucide="calendar" class="w-5 h-5 mr-3"></i>
                     Jadwal Tayang
                 </a>
-                
-                <a href="#" class="flex items-center p-3 text-gray-600 hover:bg-gray-100 rounded-lg transition duration-150">
-                    <i data-lucide="ticket" class="w-5 h-5 mr-3"></i>
-                    Pemesanan
+
+                <a href="{{ route('admin.bookings.index') }}" 
+                     class="flex items-center p-3 rounded-lg transition duration-150 {{ $isActive('admin.bookings.*') }}">
+                     <i data-lucide="ticket" class="w-5 h-5 mr-3"></i>
+                     Pemesanan
                 </a>
                 
                 <a href="#" class="flex items-center p-3 text-gray-600 hover:bg-gray-100 rounded-lg transition duration-150">
@@ -163,9 +164,13 @@
                             <i data-lucide="monitor-dot" class="w-5 h-5 mr-3"></i>
                             Tambah Studio
                         </a>
-                        <a href="#" class="flex items-center p-3 bg-purple-50 text-purple-700 font-semibold rounded-lg hover:bg-purple-100 transition duration-200">
-                            <i data-lucide="bar-chart-3" class="w-5 h-5 mr-3"></i>
-                            Lihat Laporan
+                        <a href="{{ route('admin.bookings.index') }}" class="flex items-center p-3 rounded-lg transition duration-150 {{ $isActive('admin.bookings.*') }}">
+                            <i data-lucide="ticket" class="w-5 h-5 mr-3"></i>
+                            Pemesanan
+                        </a>
+                        <a href="{{ route('admin.reports.index') }}" class="flex items-center p-3 rounded-lg transition duration-150 {{ $isActive('admin.reports.*') }}">
+                            <i data-lucide="bar-chart-2" class="w-5 h-5 mr-3"></i>
+                            Laporan
                         </a>
                     </div>
                 </div>
