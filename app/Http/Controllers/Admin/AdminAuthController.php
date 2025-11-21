@@ -1,19 +1,17 @@
 <?php
 
-// PASTIKAN NAMESPACE-NYA BENAR
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User; // <-- Ini sudah benar
-
+use App\Models\User;
+use Laravel\Socialite\Facades\Socialite; // Jangan lupa import Socialite
 
 class AdminAuthController extends Controller
 {
     public function showLoginForm()
     {
-        // Pastikan Anda punya file ini: resources/views/admin/auth/login.blade.php
         return view('admin.auth.login');
     }
 
@@ -24,43 +22,84 @@ class AdminAuthController extends Controller
             'password' => 'required',
         ]);
 
-        // 2. PERBAIKAN: Gunakan Auth::attempt() standar (guard 'web')
+        // 1. Cek kredensial (email & password)
         if (Auth::attempt($credentials)) {
             
-            // 3. Ambil user yang baru saja login
-            $user = Auth::user(); 
+            $user = Auth::user();
 
-            // 4. Periksa rolenya
-            if ($user->role === 'admin') { 
-                // Sukses! Dia adalah admin.
+            // 2. Cek Role Admin
+            if ($user->role === 'admin') {
                 $request->session()->regenerate();
                 return redirect()->intended(route('admin.dashboard'));
-            
             } else {
-                // Dia BUKAN admin (misal: 'user' atau 'kasir' mencoba login)
-                // Usir dia!
-                Auth::logout(); // <-- Langsung logout lagi
+                // Jika bukan admin, logout paksa
+                Auth::logout();
                 return back()->withErrors([
-                    'email' => 'Anda tidak memiliki hak akses admin.',
+                    'email' => 'Akun Anda tidak memiliki akses Admin.',
                 ])->onlyInput('email');
             }
         }
 
-        // 5. Jika Auth::attempt gagal (email/password salah)
         return back()->withErrors([
-            'email' => 'Email atau password yang Anda masukkan salah.',
+            'email' => 'Email atau password salah.',
         ])->onlyInput('email');
+    }
+
+    /**
+     * Redirect ke Google untuk Admin
+     */
+    public function redirectToGoogle()
+    {
+        // Menggunakan driver google, tapi kita bisa set redirect URL khusus admin jika perlu
+        // Pastikan Anda sudah menambahkan route 'admin.google.callback' di web.php
+        return Socialite::driver('google')
+            // ->redirectUrl(route('admin.google.callback')) // Opsional: jika ingin URL callback beda
+            ->redirect();
+    }
+
+    /**
+     * Handle Callback dari Google
+     */
+    public function handleGoogleCallback()
+    {
+        try {
+            // Ambil data user dari Google
+            $googleUser = Socialite::driver('google')->user();
+            
+            // Cari user di database berdasarkan email
+            $user = User::where('email', $googleUser->getEmail())->first();
+
+            // Skenario 1: User tidak ditemukan
+            if (!$user) {
+                return redirect()->route('admin.login')
+                    ->withErrors(['email' => 'Email ini tidak terdaftar dalam sistem.']);
+            }
+
+            // Skenario 2: User ada, tapi bukan Admin
+            if ($user->role !== 'admin') {
+                return redirect()->route('admin.login')
+                    ->withErrors(['email' => 'Akun Google ini bukan akun Admin.']);
+            }
+
+            // Skenario 3: User ada & Admin (Sukses)
+            Auth::login($user);
+            request()->session()->regenerate();
+
+            return redirect()->intended(route('admin.dashboard'));
+
+        } catch (\Exception $e) {
+            return redirect()->route('admin.login')
+                ->withErrors(['email' => 'Gagal login dengan Google. Silakan coba lagi.']);
+        }
     }
 
     public function logout(Request $request)
     {
-        // 6. PERBAIKAN: Gunakan Auth::logout() standar
-        Auth::logout(); 
-        
+        Auth::logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
-        // Arahkan kembali ke halaman login admin
+
         return redirect()->route('admin.login');
     }
 }

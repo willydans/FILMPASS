@@ -28,11 +28,17 @@ Route::middleware(['guest'])->group(function () {
     
     Route::get('/', [UserDashboardController::class, 'index'])->name('home'); 
 
-    // Rute otentikasi pengguna
+    // Rute Login & Register Manual User
     Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('login', [AuthController::class, 'login']);
     Route::get('register', [AuthController::class, 'showRegistrationForm'])->name('register');
     Route::post('register', [AuthController::class, 'register']);
+
+    // ==========================================
+    // RUTE GOOGLE LOGIN (USER)
+    // ==========================================
+    Route::get('auth/google', [AuthController::class, 'redirectToGoogle'])->name('google.login');
+    Route::get('auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 
 });
 
@@ -62,11 +68,10 @@ Route::middleware(['auth'])->group(function () {
 
 
     // --- FITUR RIWAYAT ---
-    // URL dirapikan jadi /riwayat (tanpa /user di depannya)
     Route::get('/riwayat', [HistoryController::class, 'index'])->name('riwayat');
     Route::get('/riwayat/{id}', [HistoryController::class, 'show'])->name('riwayat.detail');
 
-    // Rute Logout
+    // Rute Logout User
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 });
 
@@ -76,8 +81,21 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // Rute Auth Admin (Hanya untuk Tamu)
     Route::middleware(['guest'])->group(function () {
+        // Login Manual Admin
         Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('login');
         Route::post('login', [AdminAuthController::class, 'login']);
+
+        // ==========================================
+        // RUTE GOOGLE LOGIN (ADMIN) - TAMBAHAN BARU
+        // ==========================================
+        // Ini menggunakan method yang kita tambahkan di AdminAuthController tadi
+        Route::get('auth/google', [AdminAuthController::class, 'redirectToGoogle'])->name('google.login');
+        // Catatan: Callback Google biasanya diarahkan ke satu URL utama.
+        // Jika Anda menggunakan callback yang SAMA dengan user (auth/google/callback),
+        // maka logika pemisahan (redirect ke dashboard admin vs user) harus ada di AuthController biasa.
+        // Namun, jika Anda mendaftarkan URL callback KHUSUS admin di Google Console (misal: /admin/auth/google/callback),
+        // maka gunakan baris di bawah ini:
+        // Route::get('auth/google/callback', [AdminAuthController::class, 'handleGoogleCallback']);
     });
     
     // Rute Logout Admin
