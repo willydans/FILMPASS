@@ -1,0 +1,52 @@
+/* 1. Directive Wajib Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 2. Custom Font (Inter) */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f9fafb; /* bg-gray-50 default */
+}
+
+/* 3. Utility untuk menyembunyikan Scrollbar (tapi tetap bisa discroll) */
+/* Untuk Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Untuk IE, Edge and Firefox */
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+/* 4. Perbaikan untuk Ikon Lucide agar sejajar */
+.lucide {
+    vertical-align: middle;
+}
+
+/* 5. Custom Progress Bar Container */
+.sales-bar-container {
+    height: 8px;
+    border-radius: 9999px;
+    background-color: #e5e7eb; /* gray-200 */
+    overflow: hidden;
+}
+
+/* 6. Custom Progress Bar Fill */
+.sales-bar-fill {
+    height: 100%;
+    background-color: #4f46e5; /* indigo-600 */
+    transition: width 1s ease-in-out;
+}
+
+/* 7. Icon Box di Dashboard */
+.icon-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 9999px;
+}

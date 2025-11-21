@@ -3,63 +3,152 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Studio;
+use App\Models\Facility; // <-- Pastikan ini di-import
 use Illuminate\Http\Request;
 
 class StudioController extends Controller
 {
     /**
-     * Display a listing of the studios.
+     * Menampilkan halaman daftar studio.
      */
     public function index()
     {
-        return view('admin.studio'); // studio.blade.php
+        // PERBAIKAN 1:
+        // Kita tambahkan 'withSum' untuk menghitung okupansi
+        // Ini akan mengambil relasi 'bookings' dari Model Studio
+        // dan menjumlahkan (SUM) kolom 'seat_count'
+        $studios = Studio::with('facilities')
+                         ->withSum('bookings', 'seat_count') // <-- INI YANG BARU
+                         ->orderBy('name', 'asc')
+                         ->get();
+        
+        // Ambil juga semua fasilitas untuk modal
+        $facilities = Facility::orderBy('name', 'asc')->get();
+
+        // Kirim KEDUA data ke file view
+        return view('admin.studio', [
+            'studios' => $studios,
+            'facilities' => $facilities
+        ]);
     }
 
     /**
-     * Show the form for creating a new studio.
+     * FUNGSI BARU DITAMBAHKAN:
+     * Untuk mengubah status studio (Aktif / Maintenance)
+     */
+    public function toggleStatus(Studio $studio)
+    {
+        // 1. Ubah statusnya
+        $newStatus = ($studio->status == 'Aktif') ? 'Maintenance' : 'Aktif';
+        $studio->status = $newStatus;
+        $studio->save();
+        
+        // 2. Redirect kembali ke halaman studio
+        return redirect()->route('admin.studios.index')
+                         ->with('success', 'Status ' . $studio->name . ' diubah menjadi ' . $newStatus);
+    }
+
+    /**
+     * Menampilkan form untuk membuat studio baru.
      */
     public function create()
     {
-        abort(501, 'Not implemented yet.');
+        $facilities = Facility::orderBy('name')->get();
+        
+        // Pastikan Anda sudah membuat file ini: /resources/views/admin/studio_create.blade.php
+        return view('admin.studio_create', [
+            'facilities' => $facilities
+        ]);
     }
 
     /**
-     * Store a newly created studio in storage.
+     * Menyimpan studio baru ke database.
      */
     public function store(Request $request)
     {
-        abort(501, 'Not implemented yet.');
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:studios',
+            'type' => 'required|string|max:100',
+            'capacity' => 'required|integer|min:1',
+            'base_price' => 'required|integer|min:0',
+            'status' => 'required|string|in:Aktif,Maintenance',
+            'description' => 'nullable|string',
+            'facilities' => 'nullable|array',
+            'facilities.*' => 'exists:facilities,id'
+        ]);
+
+        $studio = Studio::create($validated);
+
+        if ($request->has('facilities')) {
+            $studio->facilities()->sync($request->facilities);
+        }
+
+        return redirect()->route('admin.studios.index')
+                         ->with('success', 'Studio baru berhasil ditambahkan.');
     }
 
     /**
-     * Display the specified studio.
+     * Menampilkan data studio spesifik (redirect ke edit).
      */
-    public function show($id)
+    public function show(Studio $studio)
     {
-        abort(501, 'Not implemented yet.');
+        return redirect()->route('admin.studios.edit', $studio->id);
     }
 
     /**
-     * Show the form for editing the specified studio.
+     * Menampilkan form untuk mengedit studio.
      */
-    public function edit($id)
+    public function edit(Studio $studio)
     {
-        abort(501, 'Not implemented yet.');
+        $facilities = Facility::orderBy('name')->get();
+        $studio->load('facilities');
+        
+        // Pastikan Anda sudah membuat file ini: /resources/views/admin/studio_edit.blade.php
+        return view('admin.studio_edit', [
+            'studio' => $studio,
+            'facilities' => $facilities
+        ]);
     }
 
     /**
-     * Update the specified studio in storage.
+     * Memperbarui data studio di database.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Studio $studio)
     {
-        abort(501, 'Not implemented yet.');
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:studios,name,' . $studio->id,
+            'type' => 'required|string|max:100',
+            'capacity' => 'required|integer|min:1',
+            'base_price' => 'required|integer|min:0',
+            'status' => 'required|string|in:Aktif,Maintenance',
+            'description' => 'nullable|string',
+            'facilities' => 'nullable|array',
+            'facilities.*' => 'exists:facilities,id'
+        ]);
+
+        $studio->update($validated);
+        $studio->facilities()->sync($request->input('facilities', []));
+
+        return redirect()->route('admin.studios.index')
+                         ->with('success', 'Studio ' . $studio->name . ' berhasil diperbarui.');
     }
 
     /**
-     * Remove the specified studio from storage.
+     * Menghapus studio dari database.
      */
-    public function destroy($id)
+    public function destroy(Studio $studio)
     {
-        abort(501, 'Not implemented yet.');
+        try {
+            $studioName = $studio->name;
+            $studio->delete();
+            
+            return redirect()->route('admin.studios.index')
+                             ->with('success', 'Studio ' . $studioName . ' berhasil dihapus.');
+                             
+        } catch (\Illuminate\Database\QueryException $e) {
+            return redirect()->route('admin.studios.index')
+                             ->with('error', 'Gagal menghapus ' . $studio->name . '. Pastikan tidak ada jadwal yang terikat.');
+        }
     }
 }

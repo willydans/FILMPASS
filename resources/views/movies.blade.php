@@ -3,170 +3,241 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FilmPass Clone</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <title>Daftar Film - FilmPass</title>
+  
+  {{-- Gunakan partial head Anda --}}
+  @include('partials.head')
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: #0f172a;
+      background-color: #0f172a; /* slate-900 */
     }
-
     .bg-dark-card {
-      background-color: #1e293b;
+      background-color: #1e293b; /* slate-800 */
     }
-
-    .line-clamp-2 {
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      -webkit-line-clamp: 2;
+    /* Custom scrollbar for aesthetics */
+    ::-webkit-scrollbar {
+      width: 8px;
     }
-
-    #searchInput:focus, #genreSelect:focus {
-      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
     }
   </style>
 </head>
 
-<body class="text-white min-h-screen flex flex-col">
+<body class="text-white min-h-screen flex flex-col font-inter">
 
   {{-- HEADER --}}
   @include('partials.header')
 
-  <!-- MAIN -->
   <main class="flex-grow pt-24 pb-16">
     <div class="max-w-7xl mx-auto px-6">
-      <!-- Kembali ke Dashboard -->
+      
+      {{-- Tombol Kembali --}}
       <div class="mb-6">
-        <a href="/dashboard" class="inline-flex items-center text-indigo-400 hover:text-indigo-300 transition-colors">
-          <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i>
+        <a href="{{ route('dashboard') }}" class="inline-flex items-center text-indigo-400 hover:text-indigo-300 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
           Kembali ke Dashboard
         </a>
       </div>
 
-      <!-- Judul & Filter -->
-      <section class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 space-y-4 md:space-y-0">
+      {{-- LOGIKA PHP UNTUK MENGAMBIL GENRE & RATING UNIK --}}
+      @php
+          // 1. Ambil Genre Unik
+          $allGenres = $films->pluck('genre')
+              ->flatMap(function ($item) {
+                  return explode(', ', $item);
+              })
+              ->unique()
+              ->sort()
+              ->values();
+
+          // 2. Ambil Rating Unik (SU, 13+, 17+, dll)
+          $allRatings = $films->pluck('rating')->unique()->sort()->values();
+      @endphp
+
+      {{-- FILTER SECTION --}}
+      <section class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 space-y-4 lg:space-y-0">
         <h1 class="text-3xl font-bold text-white md:mr-10">Temukan Film Favoritmu</h1>
 
-        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
-          <div class="relative w-full sm:w-80">
-            <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"></i>
-            <input id="searchInput" type="text" placeholder="Cari film..." class="pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg w-full focus:ring-indigo-500 focus:border-indigo-500" oninput="filterMovies()">
+        <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          
+          {{-- Search Input --}}
+          <div class="relative flex-grow sm:w-64">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="searchInput" type="text" placeholder="Cari judul film..." 
+                   class="pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg w-full focus:ring-indigo-500 focus:border-indigo-500 text-white placeholder-gray-400 transition-all">
           </div>
 
-          <div class="relative">
-            <select id="genreSelect" class="appearance-none block w-full bg-gray-800 border border-gray-700 py-2 pl-4 pr-8 rounded-lg leading-tight focus:outline-none focus:border-indigo-500 cursor-pointer text-gray-300" onchange="filterMovies()">
+          {{-- Genre Select --}}
+          <div class="relative sm:w-48">
+            <select id="genreSelect" class="appearance-none block w-full bg-slate-800 border border-slate-700 py-2 pl-4 pr-10 rounded-lg leading-tight focus:outline-none focus:border-indigo-500 cursor-pointer text-gray-300 transition-all">
               <option value="Semua Genre">Semua Genre</option>
-              <option value="Action">Action</option>
-              <option value="Comedy">Comedy</option>
-              <option value="Romance">Romance</option>
-              <option value="Horror">Horror</option>
-              <option value="Sci-Fi">Sci-Fi</option>
-              <option value="Drama">Drama</option>
-              <option value="Animation">Animation</option>
-              <option value="Fantasy">Fantasy</option>
-              <option value="Thriller">Thriller</option>
+              @foreach($allGenres as $genre)
+                  <option value="{{ $genre }}">{{ $genre }}</option>
+              @endforeach
             </select>
-            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"><path d="m6 9 6 6 6-6"/></svg>
           </div>
+
+          {{-- Rating Select (BARU) --}}
+          <div class="relative sm:w-40">
+            <select id="ratingSelect" class="appearance-none block w-full bg-slate-800 border border-slate-700 py-2 pl-4 pr-10 rounded-lg leading-tight focus:outline-none focus:border-indigo-500 cursor-pointer text-gray-300 transition-all">
+              <option value="Semua Umur">Semua Umur</option>
+              @foreach($allRatings as $rating)
+                  <option value="{{ $rating }}">{{ $rating }}</option>
+              @endforeach
+            </select>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+
         </div>
       </section>
 
-      <!-- Jumlah hasil -->
-      <div class="mb-6 text-gray-400 text-sm" id="resultCount">
-        Menampilkan semua film
+      {{-- Counter Hasil --}}
+      <div class="mb-6 text-gray-400 text-sm flex justify-between items-center">
+        <span id="resultCount">Menampilkan {{ $films->count() }} film</span>
       </div>
 
-      <!-- Grid Film -->
+      {{-- MOVIE GRID --}}
       <section id="movieGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-        <!-- Diisi lewat JS -->
+        
+        @forelse($films as $film)
+            <div class="movie-card bg-dark-card rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition duration-300 flex flex-col group border border-slate-700 hover:border-indigo-500/50"
+                 data-title="{{ strtolower($film->title) }}"
+                 data-genre="{{ strtolower($film->genre) }}"
+                 data-rating="{{ $film->rating }}"> {{-- TAMBAHAN DATA RATING --}}
+              
+              {{-- Poster Film --}}
+              <div class="relative aspect-[2/3] overflow-hidden">
+                  <img src="{{ $film->poster_path ? asset('storage/' . $film->poster_path) : 'https://placehold.co/400x600/1E293B/FFF?text=No+Poster' }}" 
+                       alt="Poster {{ $film->title }}" 
+                       class="w-full h-full object-cover group-hover:brightness-75 transition-all duration-300">
+                  
+                   {{-- Rating Badge Overlay --}}
+                   <div class="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-yellow-400 text-xs font-bold px-2 py-1 rounded flex items-center border border-white/10">
+                      <span class="mr-1">⭐</span> {{ $film->rating }}
+                  </div>
+              </div>
+              
+              <div class="p-4 flex flex-col flex-grow">
+                <h3 class="text-lg font-bold text-white mb-1 line-clamp-1 group-hover:text-indigo-400 transition-colors" title="{{ $film->title }}">
+                    {{ $film->title }}
+                </h3>
+                
+                <div class="flex flex-wrap gap-2 mb-3 text-xs text-gray-400">
+                   {{-- Tampilkan Genre (maksimal 2 agar rapi) --}}
+                   @foreach(array_slice(explode(', ', $film->genre), 0, 2) as $g)
+                      <span class="bg-slate-700 px-2 py-0.5 rounded">{{ $g }}</span>
+                   @endforeach
+                   <span>• {{ $film->duration_minutes }} m</span>
+                </div>
+                
+                <p class="text-sm text-gray-300 line-clamp-2 mb-4 flex-grow text-justify">
+                    {{ $film->description }}
+                </p>
+                
+                {{-- Tombol Pesan Tiket --}}
+                <a href="{{ route('ticket.create', $film->id) }}" 
+                   class="w-full mt-auto bg-indigo-600 text-white font-semibold py-2.5 rounded-lg hover:bg-indigo-700 transition duration-150 shadow-lg shadow-indigo-600/20 flex items-center justify-center space-x-2 group-hover:translate-y-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+                    <span>Pesan Tiket</span>
+                </a>
+              </div>
+            </div>
+        @empty
+            <div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-500 bg-slate-800/50 rounded-xl border border-dashed border-slate-700">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-12 h-12 mb-4 opacity-50"><path d="M19.82 2H4.18C2.97 2 2 2.97 2 4.18v15.64C2 21.03 2.97 22 4.18 22h15.64c1.21 0 2.18-.97 2.18-2.18V4.18C22 2.97 21.03 2 19.82 2Z"/><path d="M7 2v20"/><path d="M17 2v20"/><path d="M2 12h20"/><path d="M2 7h5"/><path d="M2 17h5"/><path d="M17 17h5"/><path d="M17 7h5"/></svg>
+                <p class="text-lg">Belum ada film yang tersedia saat ini.</p>
+            </div>
+        @endforelse
+
       </section>
+
+      {{-- Pesan "Tidak Ditemukan" --}}
+      <div id="noResultsMessage" class="hidden col-span-full text-center py-20 bg-slate-800/50 rounded-xl border border-dashed border-slate-700">
+        <p class="text-gray-400 text-lg">Tidak ada film yang cocok dengan kriteria pencarian Anda.</p>
+        <button onclick="resetFilters()" class="mt-4 text-indigo-400 hover:underline">Reset Filter</button>
+      </div>
+
     </div>
   </main>
 
   {{-- FOOTER --}}
   @include('partials.footer')
 
-  <!-- SCRIPT -->
+  {{-- SCRIPTS --}}
   <script>
-    const allMovies = [
-      { title: "Avengers: Endgame", genre: "Action", duration: "3j 2m", image: "https://image.tmdb.org/t/p/w500/ulzhLuWrPK07P1YkdWQLZnQh1JL.jpg", description: "Para Avengers bersatu menghadapi Thanos demi menyelamatkan alam semesta." },
-      { title: "Joker", genre: "Drama", duration: "2j 2m", image: "https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg", description: "Kisah hidup Arthur Fleck yang berubah menjadi Joker." },
-      { title: "Spider-Man: No Way Home", genre: "Action", duration: "2j 28m", image: "https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg", description: "Peter Parker menghadapi ancaman multiverse setelah identitasnya terbongkar." },
-      { title: "Interstellar", genre: "Sci-Fi", duration: "2j 49m", image: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg", description: "Sekelompok astronot menjelajahi ruang-waktu demi menyelamatkan umat manusia." },
-      { title: "The Conjuring", genre: "Horror", duration: "1j 52m", image: "https://image.tmdb.org/t/p/w500/wVYREutTvI2tmxr6ujrHT704wGF.jpg", description: "Penyelidikan Ed dan Lorraine Warren terhadap rumah berhantu." },
-      { title: "Crazy Rich Asians", genre: "Romance", duration: "2j 1m", image: "https://image.tmdb.org/t/p/w500/1XxL4LJ5WHdrcYcihEZUCgNCpAW.jpg", description: "Cinta diuji ketika Rachel bertemu keluarga super kaya kekasihnya." },
-      { title: "Free Guy", genre: "Comedy", duration: "1j 55m", image: "https://image.tmdb.org/t/p/w500/xmbU4JTUm8rsdtn7Y3Fcm30GpeT.jpg", description: "Seorang NPC di video game mulai sadar dan berusaha menjadi pahlawan." },
-      { title: "Tenet", genre: "Thriller", duration: "2j 30m", image: "https://image.tmdb.org/t/p/w500/k68nPLbIST6NP96JmTxmZijEvCA.jpg", description: "Agen rahasia berjuang melawan ancaman waktu untuk menyelamatkan dunia." },
-      { title: "Frozen II", genre: "Animation", duration: "1j 43m", image: "https://image.tmdb.org/t/p/w500/qdfARIhgpgZOBh3vfNhWS4hmSo3.jpg", description: "Elsa mencari asal kekuatannya bersama Anna, Kristoff, dan Olaf." },
-      { title: "The Batman", genre: "Action", duration: "2j 55m", image: "https://image.tmdb.org/t/p/w500/74xTEgt7R36Fpooo50r9T25onhq.jpg", description: "Batman menghadapi Riddler yang mengungkap korupsi di Gotham." },
-      { title: "Black Panther", genre: "Action", duration: "2j 14m", image: "https://image.tmdb.org/t/p/w500/uxzzxijgPIY7slzFvMotPv8wjKA.jpg", description: "T'Challa kembali ke Wakanda untuk menjadi raja dan melindungi negerinya." },
-      { title: "The Notebook", genre: "Romance", duration: "2j 3m", image: "https://image.tmdb.org/t/p/w500/rNzQyW4f8B8cQeg7Dgj3n6eT5k9.jpg", description: "Kisah cinta sejati yang bertahan melampaui waktu dan kenangan." },
-      { title: "Parasite", genre: "Drama", duration: "2j 12m", image: "https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg", description: "Keluarga miskin menyusup ke rumah orang kaya dengan konsekuensi mematikan." },
-      { title: "Inception", genre: "Sci-Fi", duration: "2j 28m", image: "https://image.tmdb.org/t/p/w500/edv5CZvWj09upOsy2Y6IwDhK8bt.jpg", description: "Pencuri mimpi berusaha menanam ide dalam alam bawah sadar seseorang." },
-      { title: "A Quiet Place", genre: "Horror", duration: "1j 30m", image: "https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg", description: "Keluarga bertahan hidup di dunia yang dikuasai makhluk peka suara." },
-      { title: "Your Name", genre: "Animation", duration: "1j 46m", image: "https://image.tmdb.org/t/p/w500/q719jXXEzOoYaps6babgKnONONX.jpg", description: "Dua remaja bertukar tubuh dan mencari satu sama lain lintas waktu." },
-      { title: "Doctor Strange", genre: "Fantasy", duration: "1j 55m", image: "https://image.tmdb.org/t/p/w500/uGBVj3bEbCoZbDjjl9wTxcygko1.jpg", description: "Ahli bedah menjadi penyihir pelindung dunia dari ancaman mistis." },
-      { title: "Shang-Chi", genre: "Action", duration: "2j 12m", image: "https://image.tmdb.org/t/p/w500/1BIoJGKbXjdFDAqUEiA2VHqkK1Z.jpg", description: "Seorang pemuda menghadapi masa lalunya sebagai pewaris kekuatan legendaris." },
-      { title: "The Matrix", genre: "Sci-Fi", duration: "2j 16m", image: "https://upload.wikimedia.org/wikipedia/id/c/c1/The_Matrix_Poster.jpg", description: "Neo menemukan dunia maya palsu dan berjuang untuk kebebasan manusia." },
-      { title: "Knives Out", genre: "Thriller", duration: "2j 10m", image: "https://image.tmdb.org/t/p/w500/pThyQovXQrw2m0s9x82twj48Jq4.jpg", description: "Detektif menyelidiki kematian misterius penulis kaya raya." }
-    ];
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        const searchInput = document.getElementById('searchInput');
+        const genreSelect = document.getElementById('genreSelect');
+        const ratingSelect = document.getElementById('ratingSelect'); // Selector baru
+        const movieCards = document.querySelectorAll('.movie-card');
+        const resultCount = document.getElementById('resultCount');
+        const noResultsMessage = document.getElementById('noResultsMessage');
 
-    function displayMovies(movies) {
-      const grid = document.getElementById("movieGrid");
-      const count = document.getElementById("resultCount");
-      grid.innerHTML = "";
+        function filterMovies() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedGenre = genreSelect.value.toLowerCase();
+            const selectedRating = ratingSelect.value; // Rating case-sensitive tidak masalah (misal SU, 13+)
+            
+            let visibleCount = 0;
 
-      if (movies.length === 0) {
-        grid.innerHTML = `<p class='text-gray-400 col-span-full text-center'>Tidak ada film ditemukan.</p>`;
-        count.textContent = "Menampilkan 0 film";
-        return;
-      }
+            movieCards.forEach(card => {
+                const title = card.getAttribute('data-title'); 
+                const filmGenres = card.getAttribute('data-genre'); 
+                const filmRating = card.getAttribute('data-rating'); // Ambil data rating dari kartu
 
-      grid.innerHTML = movies.map(m => `
-        <div class="bg-dark-card rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition duration-300 flex flex-col">
-          <img src="${m.image}" alt="Poster Film ${m.title}" class="w-full h-64 object-cover">
-          <div class="p-4 flex flex-col flex-grow">
-            <h3 class="text-lg font-bold text-white mb-1">${m.title}</h3>
-            <p class="text-sm text-gray-400 mb-2">${m.genre} • ${m.duration}</p>
-            <p class="text-sm text-gray-300 line-clamp-2 mb-4 flex-grow">${m.description}</p>
-            <button class="booking-btn w-full mt-auto bg-indigo-600 text-white font-semibold py-2 rounded-lg hover:bg-indigo-700 transition duration-150 shadow-md flex items-center justify-center space-x-2" data-movie-title="${m.title}">
-                <i data-lucide="ticket" class="w-4 h-4"></i>
-                <span>Pesan Tiket</span>
-            </button>
-          </div>
-        </div>
-      `).join('');
+                // 1. Cek Judul
+                const matchesSearch = title.includes(searchTerm);
+                
+                // 2. Cek Genre
+                const matchesGenre = selectedGenre === 'semua genre' || filmGenres.includes(selectedGenre);
+                
+                // 3. Cek Rating (BARU)
+                const matchesRating = selectedRating === 'Semua Umur' || filmRating === selectedRating;
 
-      count.textContent = `Menampilkan ${movies.length} film`;
-      lucide.createIcons();
-    }
+                // Tampilkan jika SEMUA kriteria cocok
+                if (matchesSearch && matchesGenre && matchesRating) {
+                    card.style.display = 'flex'; 
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
 
-    function filterMovies() {
-      const search = document.getElementById("searchInput").value.toLowerCase();
-      const genre = document.getElementById("genreSelect").value;
+            // Update UI
+            resultCount.textContent = `Menampilkan ${visibleCount} film`;
 
-      const filtered = allMovies.filter(m => {
-        const byGenre = genre === "Semua Genre" || m.genre === genre;
-        const bySearch = m.title.toLowerCase().includes(search) || m.description.toLowerCase().includes(search);
-        return byGenre && bySearch;
-      });
+            if (visibleCount === 0) {
+                noResultsMessage.classList.remove('hidden');
+            } else {
+                noResultsMessage.classList.add('hidden');
+            }
+        }
 
-      displayMovies(filtered);
-    }
+        // Global function untuk tombol reset
+        window.resetFilters = function() {
+            searchInput.value = '';
+            genreSelect.value = 'Semua Genre';
+            ratingSelect.value = 'Semua Umur'; // Reset rating juga
+            filterMovies();
+        };
 
-    document.addEventListener('click', e => {
-      const btn = e.target.closest('.booking-btn');
-      if (btn) alert(`Berhasil memilih film "${btn.dataset.movieTitle}"! (Simulasi Pemesanan)`);
+        // Event Listeners
+        searchInput.addEventListener('input', filterMovies);
+        genreSelect.addEventListener('change', filterMovies);
+        ratingSelect.addEventListener('change', filterMovies); // Listener baru
     });
-
-    window.onload = () => {
-      filterMovies();
-      lucide.createIcons();
-    };
   </script>
+
 </body>
 </html>

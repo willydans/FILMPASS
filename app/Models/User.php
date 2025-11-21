@@ -21,6 +21,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',       // Penting untuk otorisasi (admin vs user)
+        'google_id',  // Penting untuk Login Google
+        'avatar',     // (Opsional) Untuk menyimpan foto profil dari Google
     ];
 
     /**
@@ -40,5 +43,6 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password' => 'hashed',
     ];
 }
