@@ -52,13 +52,17 @@ class DashboardController extends Controller
         // Mengambil 6 film secara acak untuk ditampilkan di dashboard
         $popularFilms = Film::inRandomOrder()->take(6)->get();
 
+        // 4. DATA MANAJEMEN USER (BARU)
+        $users = User::orderBy('name')->paginate(5, ['*'], 'users_page'); // Paginate 5 user per halaman
+
         return view('admin.dashboard', [
             'totalFilm' => $totalFilm,
             'totalPemesanan' => $totalPemesanan,
             'totalPendapatan' => $totalPendapatan,
             'totalPengguna' => $totalPengguna,
             'penjualanMingguan' => $penjualanMingguan,
-            'popularFilms' => $popularFilms // <-- Kirim data ini
+            'popularFilms' => $popularFilms, // <-- Kirim data ini
+            'users' => $users // <-- Kirim data user
         ]);
     }
 }
