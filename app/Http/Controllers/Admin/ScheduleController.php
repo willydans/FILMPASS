@@ -90,6 +90,7 @@ class ScheduleController extends Controller
             'start_time' => $startTime,
             'end_time' => $endTime,
             'price' => $request->price,
+            'status' => 'terjadwal', // Default status saat membuat baru
         ]);
 
         return redirect()->route('admin.schedules.index')
@@ -116,11 +117,13 @@ class ScheduleController extends Controller
      */
     public function update(Request $request, Schedule $schedule)
     {
+        // 1. Validasi
         $request->validate([
             'film_id' => 'required|exists:films,id',
             'studio_id' => 'required|exists:studios,id',
             'start_time' => 'required|date',
             'price' => 'required|numeric|min:0',
+            'status' => 'required|string', // <-- Pastikan ini ada di validasi
         ]);
 
         // Ambil film untuk mendapatkan durasi
@@ -149,12 +152,14 @@ class ScheduleController extends Controller
             ])->withInput();
         }
 
+        // 3. Update Database DENGAN MENYERTAKAN KOLOM STATUS
         $schedule->update([
             'film_id' => $request->film_id,
             'studio_id' => $request->studio_id,
             'start_time' => $startTime,
             'end_time' => $endTime,
             'price' => $request->price,
+            'status' => $request->status, // <-- PERBAIKAN: Kolom status dimasukkan di sini
         ]);
 
         return redirect()->route('admin.schedules.index')

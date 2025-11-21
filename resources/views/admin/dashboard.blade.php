@@ -189,10 +189,10 @@
                     <span class="w-32 text-right text-sm font-semibold text-gray-800">${totalRupiah}</span>
                 </div>
             `;
-                            html += chartRow;
-                        });
-                        
-                        container.innerHTML = html;
-                        lucide.createIcons(); // Call createIcons after injecting HTML
-                    }</script>
+            html += chartRow;
+        });
+        
+        container.innerHTML = html;
+    }
+</script>
 @endpush

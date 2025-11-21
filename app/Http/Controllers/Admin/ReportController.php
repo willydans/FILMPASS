@@ -72,7 +72,8 @@ class ReportController extends Controller
             'totalTickets' => $bookings->sum('seat_count'),
             'confirmedBookings' => $bookings->where('booking_status', 'confirmed')->count(),
             'cancelledBookings' => $bookings->where('booking_status', 'cancelled')->count(),
-            'avgTicketPrice' => $bookings->avg('total_price'),
+            // Perlu menggunakan total_price / seat_count, dan perlu penanganan divide by zero
+            'avgTicketPrice' => $bookings->sum('total_price') > 0 ? ($bookings->sum('total_price') / $bookings->sum('seat_count')) : 0,
             
             // Revenue per hari
             'dailyRevenue' => Booking::whereBetween('created_at', [$start, $end])
@@ -115,12 +116,12 @@ class ReportController extends Controller
             ->select(
                 'films.id',
                 'films.title',
-                'films.poster_url',
+                'films.poster_path', // <-- PERBAIKAN DARI 'films.poster_url' ke 'films.poster_path'
                 DB::raw('SUM(bookings.total_price) as total_revenue'),
                 DB::raw('SUM(bookings.seat_count) as total_tickets'),
                 DB::raw('COUNT(bookings.id) as total_bookings')
             )
-            ->groupBy('films.id', 'films.title', 'films.poster_url')
+            ->groupBy('films.id', 'films.title', 'films.poster_path') // <-- PERBAIKAN: Gunakan films.poster_path
             ->orderBy('total_revenue', 'desc')
             ->limit(10)
             ->get();
