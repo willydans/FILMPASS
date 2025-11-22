@@ -19,25 +19,24 @@ class ScheduleController extends Controller
     {
         $filterDate = $request->input('filter_tanggal', now()->format('Y-m-d'));
         
-        // --- PENTING: Gunakan waktu lokal aplikasi untuk perbandingan yang konsisten ---
-        // Carbon::now() akan menggunakan zona waktu dari config/app.php (misal Asia/Jakarta)
-        $now = Carbon::now(); 
+        // --- PERBAIKAN: Mengambil waktu saat ini dalam format string untuk perbandingan SQL ---
+        // Ini memastikan Timezone Carbon (Asia/Jakarta) dikonversi ke string yang aman untuk DB
+        $nowString = Carbon::now()->toDateTimeString();
+        $nowCarbon = Carbon::now();
         
         // ===============================================
         // 1. OTOMATIS SINKRONISASI STATUS DI DATABASE
         // ===============================================
 
         // A. Set jadwal yang sudah SELESAI
-        // Jadwal yang end_time-nya sudah lewat dari waktu sekarang.
-        Schedule::where('end_time', '<', $now)
+        // Menggunakan toDateTimeString() untuk perbandingan yang konsisten
+        Schedule::where('end_time', '<', $nowString)
             ->where('status', '!=', 'selesai')
             ->update(['status' => 'selesai']);
 
         // B. Set jadwal yang sedang TAYANG
-        // Jadwal yang start_time-nya sudah lewat ATAU SAMA dengan waktu sekarang,
-        // DAN end_time-nya masih di masa depan.
-        Schedule::where('start_time', '<=', $now)
-            ->where('end_time', '>', $now)
+        Schedule::where('start_time', '<=', $nowString)
+            ->where('end_time', '>', $nowString)
             ->where('status', 'terjadwal') // Hanya update jika statusnya masih terjadwal
             ->update(['status' => 'sedang_tayang']);
         
