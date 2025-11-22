@@ -21,26 +21,62 @@
             
             <div class="max-w-4xl mx-auto">
                 
+                {{-- Notifikasi Info (Dari Checkout Pending) --}}
+                @if(session('info'))
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 rounded-lg text-sm text-yellow-800">
+                        <p>{{ session('info') }}</p>
+                    </div>
+                @endif
+                {{-- Notifikasi Sukses --}}
+                @if(session('success'))
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded-lg text-sm text-green-800">
+                        <p>{{ session('success') }}</p>
+                    </div>
+                @endif
+                {{-- Notifikasi Error --}}
+                 @if(session('error'))
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg text-sm text-red-800">
+                        <p>{{ session('error') }}</p>
+                    </div>
+                @endif
+
                 <div class="space-y-8">
                     
                     {{-- LOOPING DATA DARI DATABASE --}}
                     @forelse ($bookings as $booking)
-                        {{-- 
-                          Logic Warna Status
-                        --}}
+                        
                         @php
-                            $statusColor = 'text-orange-400';
-                            $statusText = 'Tiket Berhasil';
-                            $borderColor = 'hover:border-orange-500';
+                            $status = $booking->booking_status;
+                            $statusClass = '';
+                            $statusBg = '';
 
-                            if ($booking->schedule->start_time < now()) {
-                                $statusColor = 'text-gray-400';
-                                $statusText = 'Selesai (Sudah Tayang)';
-                                $borderColor = 'hover:border-gray-500';
-                            } elseif ($booking->booking_status == 'cancelled') {
-                                $statusColor = 'text-red-500';
+                            if ($status == 'confirmed') {
+                                $statusText = 'Dikonfirmasi';
+                                $statusClass = 'text-green-500';
+                                $statusBg = 'bg-green-700/30';
+                                $borderColor = 'hover:border-green-500';
+                            } elseif ($status == 'pending') {
+                                $statusText = 'Menunggu Pembayaran';
+                                $statusClass = 'text-yellow-500';
+                                $statusBg = 'bg-yellow-700/30';
+                                $borderColor = 'hover:border-yellow-500';
+                            } elseif ($status == 'cancelled') {
                                 $statusText = 'Dibatalkan';
+                                $statusClass = 'text-red-500';
+                                $statusBg = 'bg-red-700/30';
                                 $borderColor = 'hover:border-red-500';
+                            } else {
+                                $statusText = 'Status Lain';
+                                $statusClass = 'text-gray-400';
+                                $statusBg = 'bg-slate-700';
+                                $borderColor = 'hover:border-gray-500';
+                            }
+                            
+                            // Override status jika film sudah selesai tayang
+                            if ($status != 'cancelled' && $booking->schedule->end_time < now()) {
+                                $statusText = 'Selesai Tayang';
+                                $statusClass = 'text-gray-400';
+                                $statusBg = 'bg-slate-700';
                             }
                         @endphp
 
@@ -54,13 +90,12 @@
                                         {{ $booking->schedule->film->title }}
                                     </h2>
                                 </div>
-                                <span class="text-sm font-semibold {{ $statusColor }} mt-2 md:mt-0 px-3 py-1 bg-slate-700 rounded-full">
+                                <span class="text-sm font-semibold {{ $statusClass }} mt-2 md:mt-0 px-3 py-1 rounded-full {{ $statusBg }} border border-white/10">
                                     {{ $statusText }}
                                 </span>
                             </div>
 
                             {{-- Detail Tiket --}}
-                            {{-- Ubah grid menjadi 5 kolom di desktop agar muat untuk kursi --}}
                             <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-gray-300">
                                 <div>
                                     <p class="text-sm font-medium text-gray-500">Tanggal Tayang</p>
@@ -86,7 +121,7 @@
                                         {{ $booking->seat_count }} Tiket
                                     </p>
                                 </div>
-                                {{-- TAMBAHAN: Menampilkan Kursi --}}
+                                {{-- Menampilkan Kursi --}}
                                 <div>
                                     <p class="text-sm font-medium text-gray-500">Nomor Kursi</p>
                                     <p class="font-bold text-orange-400 break-words">
@@ -104,10 +139,22 @@
                                     </p>
                                 </div>
 
-                                <a href="{{ route('riwayat.detail', $booking->id) }}" 
-                                   class="text-orange-400 hover:text-orange-300 transition-colors font-medium text-sm border-b border-orange-400 pb-0.5 hover:border-orange-300">
-                                    Lihat E-Ticket &rarr;
-                                </a>
+                                <div class="flex space-x-3 items-center">
+                                    {{-- TOMBOL BATALKAN (Hanya muncul jika status pending) --}}
+                                    @if($booking->booking_status == 'pending')
+                                        <form action="{{ route('riwayat.cancel', $booking->id) }}" method="POST" onsubmit="return confirm('Yakin ingin membatalkan pesanan? Ini tidak dapat dikembalikan.')">
+                                            @csrf
+                                            <button type="submit" class="text-red-500 hover:text-red-400 transition-colors font-medium text-xs underline">
+                                                Batalkan Pesanan
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <a href="{{ route('riwayat.detail', $booking->id) }}" 
+                                       class="text-orange-400 hover:text-orange-300 transition-colors font-medium text-sm border-b border-orange-400 pb-0.5 hover:border-orange-300">
+                                        Lihat E-Ticket &rarr;
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     

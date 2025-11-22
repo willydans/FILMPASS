@@ -138,6 +138,8 @@ class TicketController extends Controller
             'total_price' => 'required|numeric'
         ]);
 
+        // Catatan: Cek ketersediaan kursi diulang di proses production/real time
+
         $booking = Booking::create([
             'schedule_id' => $request->schedule_id,
             'user_id' => Auth::id(),
@@ -145,12 +147,12 @@ class TicketController extends Controller
             'seats' => implode(', ', $request->seats),
             'total_price' => $request->total_price,
             'payment_method' => $request->payment_method,
-            'payment_status' => 'paid',
-            'booking_status' => 'confirmed',
+            'payment_status' => 'paid', // DIUBAH: Status pembayaran awal
+            'booking_status' => 'pending', // DIUBAH: Status booking awal
         ]);
 
         // Redirect ke halaman detail riwayat
         return redirect()->route('riwayat.detail', $booking->id)
-                         ->with('success', 'Pembayaran Berhasil! Tiket Anda telah terbit.');
+                         ->with('info', 'Pemesanan Anda berhasil dibuat! Menunggu verifikasi pembayaran oleh Admin.');
     }
 }

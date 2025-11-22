@@ -51,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
 
+    // --- FITUR PEMESANAN ---
     Route::get('/movies', [TicketController::class, 'index'])->name('movies.index');
     Route::get('/movies/{film}', [TicketController::class, 'create'])->name('ticket.create');
 
@@ -58,9 +59,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/booking/checkout', [TicketController::class, 'showCheckout'])->name('booking.checkout');
     Route::post('/booking/process', [TicketController::class, 'processPayment'])->name('booking.process');
 
+    // --- FITUR RIWAYAT ---
     Route::get('/riwayat', [HistoryController::class, 'index'])->name('riwayat');
     Route::get('/riwayat/{id}', [HistoryController::class, 'show'])->name('riwayat.detail');
+    
+    // Rute Pembatalan Pesanan (PATCH / POST)
+    Route::post('/riwayat/{booking}/cancel', [HistoryController::class, 'cancelBooking'])->name('riwayat.cancel');
 
+
+    // Rute Logout
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 });
 

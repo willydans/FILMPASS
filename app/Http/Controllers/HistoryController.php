@@ -18,30 +18,58 @@ class HistoryController extends Controller
         $bookings = Booking::with(['schedule.film', 'schedule.studio'])
             ->where('user_id', $userId)
             ->orderBy('created_at', 'desc')
-            ->paginate(5);
+            ->paginate(10); // Menggunakan 10 item per halaman
 
-        return view('user.riwayat', [
-            'bookings' => $bookings
-        ]);
+        // Mengarah ke resources/views/riwayat.blade.php
+        return view('user.riwayat', compact('bookings')); 
     }
 
     /**
-     * MENAMBAHKAN FUNGSI INI:
      * Menampilkan detail tiket spesifik (E-Ticket).
+     * Menerima $id sebagai ID Booking.
      */
     public function show($id)
     {
-        // 1. Cari booking berdasarkan ID
-        // 2. PENTING: Pastikan 'user_id' cocok dengan user yang login (Auth::id())
-        //    agar user tidak bisa mengintip tiket orang lain.
+        $currentUserId = Auth::id();
+
+        // PENTING: Gunakan findOrFail dan where untuk memastikan kepemilikan.
+        // Kita tidak akan menggunakan Route Model Binding di sini untuk debugging yang lebih eksplisit.
         $booking = Booking::with(['schedule.film', 'schedule.studio'])
             ->where('id', $id)
-            ->where('user_id', Auth::id()) 
-            ->firstOrFail(); // Jika tidak ketemu atau bukan miliknya, tampilkan 404 Error
+            ->where('user_id', $currentUserId)
+            ->first(); 
 
-        // 3. Kirim data ke view 'user.detail'
-        return view('user.detail', [
-            'booking' => $booking
+        if (!$booking) {
+            // Jika tiket tidak ditemukan ATAU tidak dimiliki oleh user yang login
+            abort(403, 'Akses tidak diizinkan. Tiket ini tidak ditemukan atau bukan milik Anda.');
+        }
+
+        // Jika ID cocok, lanjutkan ke view
+        return view('user.riwayat_detail', compact('booking'));
+    }
+
+    /**
+     * Memproses pembatalan pemesanan.
+     */
+    public function cancelBooking(Booking $booking)
+    {
+        // 1. Cek kepemilikan
+        if ($booking->user_id !== Auth::id()) {
+            return back()->with('error', 'Anda tidak diizinkan membatalkan pesanan ini.');
+        }
+
+        // 2. BISA DIBATALKAN HANYA JIKA STATUS MASIH PENDING
+        if ($booking->booking_status !== 'pending') {
+            return back()->with('error', 'Pesanan tidak bisa dibatalkan karena sudah dikonfirmasi atau sudah dibatalkan sebelumnya.');
+        }
+
+        // 3. Lakukan Pembatalan
+        $booking->update([
+            'booking_status' => 'cancelled',
+            'payment_status' => 'refund_pending' 
         ]);
+
+        return redirect()->route('riwayat')
+                         ->with('success', 'Pesanan berhasil dibatalkan. Dana akan diproses sesuai kebijakan.');
     }
 }

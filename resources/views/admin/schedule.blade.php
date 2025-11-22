@@ -92,6 +92,16 @@
 
     {{-- Body Tabel (Looping Data) --}}
     @forelse ($schedules as $schedule)
+        {{-- Tentukan Badge Status --}}
+        @php
+            // Memastikan status badge diambil dari current_status yang dihitung di Controller
+            $statusBadge = [
+                'terjadwal' => ['color' => 'blue', 'text' => 'Terjadwal'],
+                'sedang_tayang' => ['color' => 'green', 'text' => 'Tayang'],
+                'selesai' => ['color' => 'gray', 'text' => 'Selesai'],
+            ][$schedule->current_status ?? 'terjadwal'];
+        @endphp
+        
         {{-- Desktop View --}}
         <div class="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 items-center {{ !$loop->last ? 'border-b border-gray-200' : '' }} hover:bg-gray-50 transition-colors">
             
@@ -148,21 +158,12 @@
                 </div>
             </div>
             
-            {{-- STATUS --}}
+            {{-- STATUS (Menggunakan current_status dari controller) --}}
             <div class="col-span-1">
-                @if($schedule->status == 'sedang_tayang')
-                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700">
-                        Tayang
-                    </span>
-                @elseif($schedule->status == 'selesai')
-                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">
-                        Selesai
-                    </span>
-                @else
-                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
-                        Terjadwal
-                    </span>
-                @endif
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full 
+                      bg-{{ $statusBadge['color'] }}-100 text-{{ $statusBadge['color'] }}-700">
+                    {{ $statusBadge['text'] }}
+                </span>
             </div>
             
             {{-- AKSI --}}
@@ -174,20 +175,30 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                     </svg>
                 </a>
-                <form action="{{ route('admin.schedules.destroy', $schedule->id) }}" 
-                      method="POST" 
-                      class="inline"
-                      onsubmit="return confirm('Yakin ingin menghapus jadwal ini?')">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" 
-                            class="text-red-500 hover:text-red-700 transition-colors"
-                            title="Hapus">
+                
+                {{-- Tombol Hapus (Nonaktif jika sudah tayang atau selesai) --}}
+                @if($schedule->is_active)
+                    <form action="{{ route('admin.schedules.destroy', $schedule->id) }}" 
+                            method="POST" 
+                            class="inline"
+                            onsubmit="return confirm('Yakin ingin menghapus jadwal ini?')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" 
+                                class="text-red-500 hover:text-red-700 transition-colors"
+                                title="Hapus">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </form>
+                @else
+                    <button class="text-gray-400 cursor-not-allowed" title="Tidak dapat dihapus karena sudah tayang/selesai">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                         </svg>
                     </button>
-                </form>
+                @endif
             </div>
         </div>
 
@@ -219,27 +230,33 @@
             </div>
             
             <div class="flex justify-between items-center">
-                @if($schedule->status == 'sedang_tayang')
-                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700">Tayang</span>
-                @else
-                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">Terjadwal</span>
-                @endif
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full 
+                      bg-{{ $statusBadge['color'] }}-100 text-{{ $statusBadge['color'] }}-700">
+                    {{ $statusBadge['text'] }}
+                </span>
                 
                 <div class="flex space-x-2">
                     <a href="{{ route('admin.schedules.edit', $schedule->id) }}" 
                        class="bg-blue-500 text-white px-3 py-1.5 rounded text-xs">
                         Edit
                     </a>
-                    <form action="{{ route('admin.schedules.destroy', $schedule->id) }}" 
-                          method="POST" 
-                          class="inline"
-                          onsubmit="return confirm('Yakin ingin menghapus?')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="bg-red-500 text-white px-3 py-1.5 rounded text-xs">
+                    
+                    @if($schedule->is_active)
+                        <form action="{{ route('admin.schedules.destroy', $schedule->id) }}" 
+                                method="POST" 
+                                class="inline"
+                                onsubmit="return confirm('Yakin ingin menghapus?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="bg-red-500 text-white px-3 py-1.5 rounded text-xs">
+                                Hapus
+                            </button>
+                        </form>
+                    @else
+                        <button class="bg-gray-400 text-white px-3 py-1.5 rounded text-xs cursor-not-allowed" title="Sudah tayang">
                             Hapus
                         </button>
-                    </form>
+                    @endif
                 </div>
             </div>
         </div>

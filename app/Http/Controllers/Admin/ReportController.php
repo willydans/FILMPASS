@@ -64,19 +64,35 @@ class ReportController extends Controller
      */
     private function getOverviewReport($start, $end)
     {
-        $bookings = Booking::whereBetween('created_at', [$start, $end]);
+        // Base Query untuk semua pemesanan dalam periode yang dipilih
+        $allBookings = Booking::whereBetween('created_at', [$start, $end]);
+        
+        // Query untuk pemesanan yang DIKONFIRMASI (sumber pendapatan bersih)
+        $confirmedBookingsQuery = Booking::whereBetween('created_at', [$start, $end])
+                                         ->where('booking_status', 'confirmed');
+        
+        // Menghitung statistik utama dari yang Confirmed
+        $totalTicketsConfirmed = $confirmedBookingsQuery->sum('seat_count');
+        $totalRevenueConfirmed = $confirmedBookingsQuery->sum('total_price');
+        $totalBookingsConfirmed = $confirmedBookingsQuery->count();
 
         return [
-            'totalRevenue' => $bookings->sum('total_price'),
-            'totalBookings' => $bookings->count(),
-            'totalTickets' => $bookings->sum('seat_count'),
-            'confirmedBookings' => $bookings->where('booking_status', 'confirmed')->count(),
-            'cancelledBookings' => $bookings->where('booking_status', 'cancelled')->count(),
-            // Perlu menggunakan total_price / seat_count, dan perlu penanganan divide by zero
-            'avgTicketPrice' => $bookings->sum('total_price') > 0 ? ($bookings->sum('total_price') / $bookings->sum('seat_count')) : 0,
+            'totalRevenue' => $totalRevenueConfirmed, 
+            'totalBookings' => $allBookings->count(), // <-- Total SELURUH transaksi (termasuk pending)
+            'totalTickets' => $totalTicketsConfirmed, 
             
-            // Revenue per hari
+            // Statistik Status (Gunakan base query lagi agar tidak bentrok)
+            'confirmedBookings' => Booking::whereBetween('created_at', [$start, $end])->where('booking_status', 'confirmed')->count(),
+            'cancelledBookings' => Booking::whereBetween('created_at', [$start, $end])->where('booking_status', 'cancelled')->count(),
+            'pendingBookings' => Booking::whereBetween('created_at', [$start, $end])->where('booking_status', 'pending')->count(),
+
+            // Rata-rata Transaksi dihitung dari Total Pendapatan / Total Booking Confirmed
+            // Perbaikan: menggunakan $totalBookingsConfirmed untuk menghindari pembagian dengan nol
+            'avgTicketPrice' => $totalBookingsConfirmed > 0 ? ($totalRevenueConfirmed / $totalBookingsConfirmed) : 0,
+            
+            // Revenue per hari (hanya dari Confirmed)
             'dailyRevenue' => Booking::whereBetween('created_at', [$start, $end])
+                ->where('booking_status', 'confirmed')
                 ->select(
                     DB::raw('DATE(created_at) as date'),
                     DB::raw('SUM(total_price) as revenue'),
@@ -99,6 +115,7 @@ class ReportController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->paginate(20),
             
+            // Ini tetap total Revenue dan Booking dari SEMUA status
             'totalRevenue' => Booking::whereBetween('created_at', [$start, $end])->sum('total_price'),
             'totalBookings' => Booking::whereBetween('created_at', [$start, $end])->count(),
         ];
@@ -116,12 +133,12 @@ class ReportController extends Controller
             ->select(
                 'films.id',
                 'films.title',
-                'films.poster_path', // <-- PERBAIKAN DARI 'films.poster_url' ke 'films.poster_path'
+                'films.poster_path', 
                 DB::raw('SUM(bookings.total_price) as total_revenue'),
                 DB::raw('SUM(bookings.seat_count) as total_tickets'),
                 DB::raw('COUNT(bookings.id) as total_bookings')
             )
-            ->groupBy('films.id', 'films.title', 'films.poster_path') // <-- PERBAIKAN: Gunakan films.poster_path
+            ->groupBy('films.id', 'films.title', 'films.poster_path')
             ->orderBy('total_revenue', 'desc')
             ->limit(10)
             ->get();

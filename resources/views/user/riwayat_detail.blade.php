@@ -40,8 +40,22 @@
         <div class="max-w-4xl mx-auto px-4 text-center">
             
             <header class="text-center mb-10 no-print">
-                <h1 class="text-3xl font-bold text-orange-400">Tiket Anda Siap!</h1>
-                <p class="text-gray-400">Tunjukkan kode QR ini di loket masuk bioskop.</p>
+                <h1 class="text-3xl font-bold text-orange-400">
+                    @if($booking->booking_status == 'confirmed')
+                        Tiket Anda Dikonfirmasi!
+                    @elseif($booking->booking_status == 'pending')
+                        Menunggu Pembayaran
+                    @else
+                        Pesanan Dibatalkan
+                    @endif
+                </h1>
+                <p class="text-gray-400">
+                    @if($booking->booking_status == 'confirmed')
+                        Tunjukkan kode QR ini di loket masuk bioskop.
+                    @else
+                        Segera lakukan pembayaran dan tunggu konfirmasi Admin.
+                    @endif
+                </p>
             </header>
             
             {{-- KARTU TIKET --}}
@@ -123,26 +137,49 @@
                 {{-- BAGIAN BAWAH (QR & TOTAL) --}}
                 <div class="p-6 bg-slate-900 text-center">
                     
-                    {{-- QR Code --}}
-                    <div class="bg-white p-2 rounded-lg inline-block mb-4">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=FILMPASS-{{ $booking->id }}-{{ $booking->created_at->timestamp }}" 
-                             alt="QR Code" 
-                             class="w-32 h-32 object-contain">
-                    </div>
-                    
-                    <p class="text-lg font-mono font-bold text-white tracking-widest mb-1">
-                        FP-{{ str_pad($booking->id, 8, '0', STR_PAD_LEFT) }}
-                    </p>
-                    <p class="text-xs text-gray-500 mb-6">Scan kode ini di pintu masuk studio.</p>
+                    {{-- QR Code (Hanya Tampil Jika Confirmed) --}}
+                    @if($booking->booking_status == 'confirmed')
+                        <div class="bg-white p-2 rounded-lg inline-block mb-4">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=FILMPASS-{{ $booking->id }}-{{ $booking->created_at->timestamp }}" 
+                                 alt="QR Code" 
+                                 class="w-32 h-32 object-contain">
+                        </div>
+                        <p class="text-lg font-mono font-bold text-white tracking-widest mb-1">
+                            FP-{{ str_pad($booking->id, 8, '0', STR_PAD_LEFT) }}
+                        </p>
+                        <p class="text-xs text-gray-500 mb-6">Scan kode ini di pintu masuk studio.</p>
+                    @else
+                        <i data-lucide="scan-face" class="w-16 h-16 text-red-500 mx-auto mb-4"></i>
+                         <p class="text-sm font-semibold text-red-400">Kode QR belum aktif.</p>
+                         <p class="text-xs text-gray-500 mb-6">Tunggu konfirmasi pembayaran oleh Admin.</p>
+                    @endif
                     
                     {{-- Rincian Bayar Kecil --}}
                     <div class="border-t border-slate-800 pt-4 flex justify-between items-center text-sm">
-                        <span class="text-gray-400">Status Pembayaran</span>
-                        <span class="font-bold text-green-500 uppercase text-xs bg-green-500/10 px-2 py-1 rounded">
-                            {{ $booking->payment_status == 'paid' ? 'LUNAS' : $booking->payment_status }}
+                        <span class="text-gray-400">Status Pemesanan</span>
+                        <span class="font-bold uppercase text-xs px-2 py-1 rounded 
+                            @if($booking->booking_status == 'confirmed')
+                                text-green-500 bg-green-500/10
+                            @elseif($booking->booking_status == 'pending')
+                                text-yellow-500 bg-yellow-500/10
+                            @else
+                                text-red-500 bg-red-500/10
+                            @endif">
+                            {{ $booking->booking_status }}
                         </span>
                     </div>
                     <div class="flex justify-between items-center mt-2 text-sm">
+                        <span class="text-gray-400">Status Pembayaran</span>
+                        <span class="font-bold uppercase text-xs px-2 py-1 rounded 
+                            @if($booking->payment_status == 'paid')
+                                text-green-500 bg-green-500/10
+                            @else
+                                text-yellow-500 bg-yellow-500/10
+                            @endif">
+                            {{ $booking->payment_status }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center mt-2 text-sm pt-2 border-t border-slate-700">
                         <span class="text-gray-400">Total Bayar</span>
                         <span class="font-bold text-white">
                             Rp {{ number_format($booking->total_price, 0, ',', '.') }}
@@ -169,6 +206,9 @@
     </main>
 
     @include('partials.footer')
-
+    
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
 </html>
