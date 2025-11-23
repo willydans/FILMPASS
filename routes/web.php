@@ -2,16 +2,16 @@
 
 use Illuminate\Support\Facades\Route;
 
-// IMPORT CONTROLLER
+// 1. IMPORT SEMUA CONTROLLER
 use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\FilmController;
 use App\Http\Controllers\HistoryController;
-use App\Http\Controllers\TicketController;
-use App\Http\Controllers\Auth\AuthController;
-
+use App\Http\Controllers\TicketController; 
+use App\Http\Controllers\MidtransController; 
+use App\Http\Controllers\Auth\AuthController; 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StudioController;
-use App\Http\Controllers\Admin\ScheduleController;
+use App\Http\Controllers\Admin\ScheduleController; 
 use App\Http\Controllers\Admin\FacilityController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\BookingController;
@@ -28,8 +28,8 @@ use App\Http\Controllers\Admin\UserController;
 // RUTE PUBLIK (GUEST)
 // =====================
 Route::middleware(['guest'])->group(function () {
-
-    Route::get('/', [UserDashboardController::class, 'index'])->name('home');
+    
+    Route::get('/', [UserDashboardController::class, 'index'])->name('home'); 
 
     // Login / Register User
     Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -45,27 +45,52 @@ Route::middleware(['guest'])->group(function () {
 
 
 // =====================
+// RUTE KHUSUS MIDTRANS (WEBHOOK)
+// =====================
+Route::post('/midtrans-notification', [MidtransController::class, 'notification'])->name('midtrans.notification');
+
+
+// =====================
 // RUTE USER (HARUS LOGIN)
 // =====================
 Route::middleware(['auth'])->group(function () {
-
+    
     Route::get('dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
 
-    // --- FITUR PEMESANAN ---
+    // --- FITUR PEMESANAN TIKET ---
+    
+    // 1. Daftar Semua Film
     Route::get('/movies', [TicketController::class, 'index'])->name('movies.index');
+
+    // 2. Detail Film & Pilih Jadwal
     Route::get('/movies/{film}', [TicketController::class, 'create'])->name('ticket.create');
 
+    // 3. Pilih Kursi (Visual)
     Route::get('/booking/seats/{schedule}', [TicketController::class, 'selectSeats'])->name('booking.seats');
+
+    // 4. Checkout & Pembayaran
+    Route::get('/booking/checkout', function() {
+        return redirect()->route('movies.index')->with('error', 'Silakan pilih jadwal dan kursi terlebih dahulu.');
+    });
     Route::post('/booking/checkout', [TicketController::class, 'showCheckout'])->name('booking.checkout');
+
+    // 5. Proses Pembayaran (Simpan DB)
     Route::post('/booking/process', [TicketController::class, 'processPayment'])->name('booking.process');
+    
+    // 6. Callback Sukses (Update Status Instan dari Frontend)
+    Route::post('/booking/payment-success', [TicketController::class, 'paymentSuccess'])->name('booking.success');
+
+    // 7. Cek Status Manual (Fitur Pamungkas untuk Sandbox)
+    // INI RUTE YANG HILANG SEBELUMNYA:
+    Route::get('/booking/check-status/{booking}', [TicketController::class, 'checkStatus'])->name('booking.check_status');
+
 
     // --- FITUR RIWAYAT ---
     Route::get('/riwayat', [HistoryController::class, 'index'])->name('riwayat');
     Route::get('/riwayat/{id}', [HistoryController::class, 'show'])->name('riwayat.detail');
     
-    // Rute Pembatalan Pesanan (PATCH / POST)
+    // Rute Pembatalan Pesanan
     Route::post('/riwayat/{booking}/cancel', [HistoryController::class, 'cancelBooking'])->name('riwayat.cancel');
-
 
     // Rute Logout
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
@@ -79,14 +104,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // ---- Guest Admin (Belum login) ----
     Route::middleware(['guest'])->group(function () {
-
         Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('login');
         Route::post('login', [AdminAuthController::class, 'login']);
-
+        
         // Google login admin
         Route::get('auth/google', [AdminAuthController::class, 'redirectToGoogle'])->name('google.login');
     });
-
+    
     // ---- Logout Admin ----
     Route::post('logout', [AdminAuthController::class, 'logout'])
         ->middleware('auth')
@@ -94,19 +118,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // ---- ADMIN LOGIN + ROLE VALID ----
     Route::middleware(['auth', 'role.admin'])->group(function () {
-
-        // Dashboard
+    
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-        // Manajemen Film
+        
         Route::resource('/films', FilmController::class);
-
-        // Manajemen Studio
+        
         Route::resource('/studios', StudioController::class);
         Route::patch('/studios/{studio}/toggle-status', [StudioController::class, 'toggleStatus'])
             ->name('studios.toggleStatus');
 
-        // Jadwal Tayang
         Route::resource('/schedules', ScheduleController::class);
 
         // Fasilitas
@@ -131,6 +151,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.updateRole');
-
-    });
+    
+    }); 
+    
 });

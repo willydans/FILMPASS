@@ -7,6 +7,9 @@ use App\Models\Schedule;
 use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Midtrans\Config; 
+use Midtrans\Snap;   
+use Midtrans\Transaction; // Import Transaction untuk cek status
 
 class TicketController extends Controller
 {
@@ -16,8 +19,6 @@ class TicketController extends Controller
     public function index()
     {
         $films = Film::orderBy('title', 'asc')->get();
-        
-        // Mengarah ke resources/views/movies.blade.php
         return view('movies', ['films' => $films]);
     }
 
@@ -46,7 +47,6 @@ class TicketController extends Controller
             return $schedule;
         });
 
-        // Mengarah ke resources/views/ticket_create.blade.php
         return view('ticket_create', [
             'film' => $film,
             'schedules' => $schedules
@@ -99,7 +99,6 @@ class TicketController extends Controller
             $rows[] = ['label' => $rowLabel, 'seats' => $seatsInThisRow];
         }
 
-        // Mengarah ke resources/views/select_seats.blade.php
         return view('select_seats', compact('schedule', 'rows'));
     }
 
@@ -122,12 +121,11 @@ class TicketController extends Controller
         $adminFee = 2000;
         $totalPrice = ($pricePerTicket * $totalSeats) + $adminFee;
 
-        // Mengarah ke resources/views/checkout.blade.php
         return view('checkout', compact('schedule', 'seats', 'totalPrice', 'adminFee'));
     }
 
     /**
-     * STEP 3: PROSES PEMBAYARAN (Simpan ke Database)
+     * STEP 3: PROSES PEMBAYARAN & MIDTRANS
      */
     public function processPayment(Request $request)
     {
@@ -138,8 +136,7 @@ class TicketController extends Controller
             'total_price' => 'required|numeric'
         ]);
 
-        // Catatan: Cek ketersediaan kursi diulang di proses production/real time
-
+        // 1. Simpan Booking ke Database (Status Pending & Unpaid)
         $booking = Booking::create([
             'schedule_id' => $request->schedule_id,
             'user_id' => Auth::id(),
@@ -147,12 +144,154 @@ class TicketController extends Controller
             'seats' => implode(', ', $request->seats),
             'total_price' => $request->total_price,
             'payment_method' => $request->payment_method,
-            'payment_status' => 'paid', // DIUBAH: Status pembayaran awal
-            'booking_status' => 'pending', // DIUBAH: Status booking awal
+            'payment_status' => 'unpaid',
+            'booking_status' => 'pending',
         ]);
 
-        // Redirect ke halaman detail riwayat
+        // 2. Konfigurasi Midtrans
+        Config::$serverKey = config('services.midtrans.server_key');
+        Config::$isProduction = config('services.midtrans.is_production');
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+
+        // 3. Siapkan Parameter Midtrans Snap
+        // Gunakan Format BOOK-{ID} agar konsisten saat cek status
+        $orderId = 'BOOK-' . $booking->id;
+
+        $midtransParams = [
+            'transaction_details' => [
+                'order_id' => $orderId,
+                'gross_amount' => (int) $booking->total_price,
+            ],
+            'customer_details' => [
+                'first_name' => Auth::user()->name,
+                'email' => Auth::user()->email,
+            ],
+            'item_details' => [
+                [
+                    'id' => 'TICKET-' . $booking->id,
+                    'price' => (int) $booking->total_price,
+                    'quantity' => 1,
+                    'name' => 'Tiket Film: ' . $booking->schedule->film->title,
+                ]
+            ]
+        ];
+
+        // Opsional: Filter metode pembayaran
+        if ($request->payment_method == 'qris') {
+            $midtransParams['enabled_payments'] = ['qris', 'gopay', 'shopeepay'];
+        } elseif ($request->payment_method == 'bank_transfer') {
+            $midtransParams['enabled_payments'] = ['bca_va', 'bni_va', 'bri_va', 'permata_va', 'other_va'];
+        }
+
+        try {
+            // 4. Dapatkan Snap Token
+            $snapToken = Snap::getSnapToken($midtransParams);
+            
+            // 5. Arahkan ke Halaman Pembayaran
+            return view('payment_page', [
+                'snapToken' => $snapToken, 
+                'booking' => $booking
+            ]);
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal memproses pembayaran: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * STEP 4: CALLBACK SUKSES DARI FRONTEND
+     */
+    public function paymentSuccess(Request $request)
+    {
+        $request->validate([
+            'booking_id' => 'required|exists:bookings,id',
+        ]);
+
+        $booking = Booking::findOrFail($request->booking_id);
+
+        if ($booking->user_id !== Auth::id()) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        // Asumsi: Jika frontend trigger success, kemungkinan besar sudah paid.
+        // Namun Webhook adalah kebenaran mutlak.
+        $booking->update([
+            'payment_status' => 'paid',
+            'booking_status' => 'confirmed',
+        ]);
+
         return redirect()->route('riwayat.detail', $booking->id)
-                         ->with('info', 'Pemesanan Anda berhasil dibuat! Menunggu verifikasi pembayaran oleh Admin.');
+                         ->with('success', 'Pembayaran Berhasil! Tiket Anda sudah aktif.');
+    }
+
+    /**
+     * FUNGSI BARU: Cek Status Transaksi Manual ke Midtrans (REAL CHECK)
+     */
+    public function checkStatus($bookingId)
+    {
+        $booking = Booking::findOrFail($bookingId);
+
+        // Hanya proses jika tiket ini milik user yg login
+        if ($booking->user_id !== Auth::id()) {
+             abort(403, 'Akses ditolak.');
+        }
+        
+        // Konfigurasi Midtrans
+        Config::$serverKey = config('services.midtrans.server_key');
+        Config::$isProduction = config('services.midtrans.is_production');
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+
+        // Order ID sesuai format di processPayment
+        $orderId = 'BOOK-' . $booking->id;
+
+        try {
+            // Panggil API Midtrans untuk cek status
+            $status = Transaction::status($orderId);
+            $transactionStatus = $status->transaction_status;
+            $fraudStatus = $status->fraud_status ?? null;
+            
+            $message = "Status pembayaran belum berubah.";
+            $alertType = "info";
+
+            // Logika Update Status Database berdasarkan Respon Midtrans Real-time
+            if ($transactionStatus == 'capture') {
+                if ($fraudStatus == 'challenge') {
+                    $booking->update(['payment_status' => 'challenge', 'booking_status' => 'pending']);
+                    $message = "Pembayaran sedang diverifikasi.";
+                } else {
+                    $booking->update(['payment_status' => 'paid', 'booking_status' => 'confirmed']);
+                    $message = "Pembayaran berhasil dikonfirmasi!";
+                    $alertType = "success";
+                }
+            } else if ($transactionStatus == 'settlement') {
+                $booking->update(['payment_status' => 'paid', 'booking_status' => 'confirmed']);
+                $message = "Pembayaran berhasil dikonfirmasi!";
+                $alertType = "success";
+            } else if ($transactionStatus == 'pending') {
+                $booking->update(['payment_status' => 'unpaid', 'booking_status' => 'pending']);
+                $message = "Menunggu pembayaran. Silakan selesaikan transaksi Anda.";
+                $alertType = "warning";
+            } else if ($transactionStatus == 'deny') {
+                $booking->update(['payment_status' => 'failed', 'booking_status' => 'cancelled']);
+                $message = "Pembayaran ditolak.";
+                $alertType = "error";
+            } else if ($transactionStatus == 'expire') {
+                $booking->update(['payment_status' => 'expired', 'booking_status' => 'cancelled']);
+                $message = "Waktu pembayaran habis. Pesanan dibatalkan.";
+                $alertType = "error";
+            } else if ($transactionStatus == 'cancel') {
+                $booking->update(['payment_status' => 'cancelled', 'booking_status' => 'cancelled']);
+                $message = "Pembayaran dibatalkan.";
+                $alertType = "error";
+            }
+
+            return back()->with($alertType, $message);
+
+        } catch (\Exception $e) {
+            // Jika transaksi tidak ditemukan di Midtrans (misal belum klik bayar sama sekali)
+            return back()->with('error', 'Transaksi belum ditemukan atau terjadi kesalahan koneksi.');
+        }
     }
 }

@@ -13,6 +13,7 @@ class HistoryController extends Controller
      */
     public function index()
     {
+        // Mendapatkan ID user yang sedang login
         $userId = Auth::id();
 
         $bookings = Booking::with(['schedule.film', 'schedule.studio'])
@@ -20,7 +21,7 @@ class HistoryController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10); // Menggunakan 10 item per halaman
 
-        // Mengarah ke resources/views/riwayat.blade.php
+        // MENGARAHKAN KE resources/views/user/riwayat.blade.php
         return view('user.riwayat', compact('bookings')); 
     }
 
@@ -32,8 +33,7 @@ class HistoryController extends Controller
     {
         $currentUserId = Auth::id();
 
-        // PENTING: Gunakan findOrFail dan where untuk memastikan kepemilikan.
-        // Kita tidak akan menggunakan Route Model Binding di sini untuk debugging yang lebih eksplisit.
+        // Cari Booking berdasarkan ID dan USER ID untuk memverifikasi kepemilikan
         $booking = Booking::with(['schedule.film', 'schedule.studio'])
             ->where('id', $id)
             ->where('user_id', $currentUserId)
@@ -44,7 +44,7 @@ class HistoryController extends Controller
             abort(403, 'Akses tidak diizinkan. Tiket ini tidak ditemukan atau bukan milik Anda.');
         }
 
-        // Jika ID cocok, lanjutkan ke view
+        // MENGARAHKAN KE resources/views/riwayat_detail.blade.php
         return view('user.riwayat_detail', compact('booking'));
     }
 

@@ -40,6 +40,13 @@
         <div class="max-w-4xl mx-auto px-4 text-center">
             
             <header class="text-center mb-10 no-print">
+                @if(session('success'))
+                    <div class="bg-green-500/20 text-green-400 px-4 py-2 rounded-lg mb-4 border border-green-500/50 inline-block">
+                        {{ session('success') }}
+                    </div>
+                    <br>
+                @endif
+
                 <h1 class="text-3xl font-bold text-orange-400">
                     @if($booking->booking_status == 'confirmed')
                         Tiket Anda Dikonfirmasi!
@@ -149,9 +156,23 @@
                         </p>
                         <p class="text-xs text-gray-500 mb-6">Scan kode ini di pintu masuk studio.</p>
                     @else
-                        <i data-lucide="scan-face" class="w-16 h-16 text-red-500 mx-auto mb-4"></i>
-                         <p class="text-sm font-semibold text-red-400">Kode QR belum aktif.</p>
-                         <p class="text-xs text-gray-500 mb-6">Tunggu konfirmasi pembayaran oleh Admin.</p>
+                        {{-- TAMPILAN JIKA BELUM BAYAR / PENDING --}}
+                        <div class="bg-red-500/10 p-4 rounded-lg mb-6 border border-red-500/30">
+                            <div class="flex justify-center mb-2">
+                                <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <p class="text-white font-bold mb-1">Menunggu Pembayaran</p>
+                            <p class="text-xs text-gray-400 mb-4">Status tiket belum aktif.</p>
+                            
+                            {{-- TOMBOL CEK STATUS MANUAL --}}
+                            {{-- Pastikan route 'booking.check_status' sudah ada di web.php --}}
+                            <a href="{{ route('booking.check_status', $booking->id) }}" 
+                               class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-6 rounded-full transition shadow-lg hover:shadow-blue-500/50">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                Cek Status Pembayaran
+                            </a>
+                            <p class="text-[10px] text-gray-500 mt-2">*Klik jika Anda sudah membayar tapi status belum berubah</p>
+                        </div>
                     @endif
                     
                     {{-- Rincian Bayar Kecil --}}
@@ -196,19 +217,19 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
                     Kembali ke Riwayat
                 </a>
+                
+                @if($booking->booking_status == 'confirmed')
                 <button onclick="window.print()" class="px-6 py-3 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
                     Cetak / Simpan PDF
                 </button>
+                @endif
             </div>
 
         </div> 
     </main>
 
     @include('partials.footer')
-    
-    <script>
-        lucide.createIcons();
-    </script>
+
 </body>
 </html>

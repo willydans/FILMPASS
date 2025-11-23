@@ -56,7 +56,7 @@
                                 $statusBg = 'bg-green-700/30';
                                 $borderColor = 'hover:border-green-500';
                             } elseif ($status == 'pending') {
-                                $statusText = 'Menunggu Pembayaran';
+                                $statusText = 'Menunggu Konfirmasi';
                                 $statusClass = 'text-yellow-500';
                                 $statusBg = 'bg-yellow-700/30';
                                 $borderColor = 'hover:border-yellow-500';
