@@ -7,7 +7,7 @@ use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\FilmController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\TicketController; 
-use App\Http\Controllers\MidtransController; 
+use App\Http\Controllers\MidtransController; // <-- Pastikan MidtransController diimport
 use App\Http\Controllers\Auth\AuthController; 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\StudioController;
@@ -41,12 +41,19 @@ Route::middleware(['guest'])->group(function () {
     // Google Login (User)
     Route::get('auth/google', [AuthController::class, 'redirectToGoogle'])->name('google.login');
     Route::get('auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
+
+    // === RUTE OTP (BARU) ===
+    // User belum login secara Auth::login, jadi masuk guest
+    Route::get('/verify-otp', [AuthController::class, 'showOtpForm'])->name('otp.verify');
+    Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])->name('otp.verify.post');
 });
 
 
 // =====================
 // RUTE KHUSUS MIDTRANS (WEBHOOK)
 // =====================
+// Rute ini diakses oleh Server Midtrans, bukan User.
+// Jangan masukkan ke dalam middleware 'auth'.
 Route::post('/midtrans-notification', [MidtransController::class, 'notification'])->name('midtrans.notification');
 
 
@@ -69,6 +76,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/booking/seats/{schedule}', [TicketController::class, 'selectSeats'])->name('booking.seats');
 
     // 4. Checkout & Pembayaran
+    // PERBAIKAN: Tambahkan route GET untuk menangani akses langsung (mencegah error MethodNotAllowed)
     Route::get('/booking/checkout', function() {
         return redirect()->route('movies.index')->with('error', 'Silakan pilih jadwal dan kursi terlebih dahulu.');
     });
@@ -81,7 +89,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/booking/payment-success', [TicketController::class, 'paymentSuccess'])->name('booking.success');
 
     // 7. Cek Status Manual (Fitur Pamungkas untuk Sandbox)
-    // INI RUTE YANG HILANG SEBELUMNYA:
     Route::get('/booking/check-status/{booking}', [TicketController::class, 'checkStatus'])->name('booking.check_status');
 
 
