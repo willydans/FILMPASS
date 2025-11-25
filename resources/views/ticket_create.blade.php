@@ -207,6 +207,7 @@
                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-lg">
                         <h4 class="font-bold text-slate-900 mb-4">Aksi Cepat</h4>
                         <div class="space-y-3">
+                            {{-- Link smooth scroll ke section jadwal --}}
                             <a href="#jadwal" class="block w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-center rounded-lg font-bold transition shadow-lg shadow-indigo-600/20">
                                 <i data-lucide="ticket" class="w-4 h-4 inline mr-2"></i> Pesan Tiket
                             </a>
