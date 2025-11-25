@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Film;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class UserDashboardController extends Controller
 {
@@ -13,29 +15,38 @@ class UserDashboardController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. Ambil query pencarian dari URL (jika ada)
+        // Validasi input search
+        $request->validate([
+            'search' => 'nullable|string|max:100'
+        ]);
+
+        // Ambil query pencarian dari URL dan ubah ke lowercase
         $search = $request->input('search');
+        $searchTerm = $search ? Str::lower(trim($search)) : null;
 
-        // 2. Ambil 3 Film Terbaru untuk Carousel (Featured)
-        // Film terbaru ditampilkan di slider atas
-        $featuredFilms = Film::latest()->take(3)->get();
+        // Featured Films (3 terbaru) - dengan cache
+        $featuredFilms = Cache::remember('featured_films', 3600, function() {
+            return Film::latest()->take(3)->get();
+        });
 
-        // 3. Siapkan Query untuk 'Film Populer' (List Bawah)
+        // Query untuk Popular Films
         $query = Film::query();
 
-        // Jika ada pencarian, filter berdasarkan judul, genre, atau deskripsi
-        if ($search) {
-            $query->where('title', 'like', "%{$search}%")
-                  ->orWhere('genre', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+        // PERBAIKAN: Filter search dengan LOWER() untuk case-insensitive
+        if ($searchTerm) {
+            $query->where(function($q) use ($searchTerm) {
+                $q->whereRaw('LOWER(title) LIKE ?', ["%{$searchTerm}%"])
+                  ->orWhereRaw('LOWER(genre) LIKE ?', ["%{$searchTerm}%"])
+                  ->orWhereRaw('LOWER(description) LIKE ?', ["%{$searchTerm}%"]);
+            });
         }
 
-        // 4. Ambil data dengan Pagination (12 film per halaman)
-        // Menggunakan paginate() agar halaman tidak berat memuat semua film sekaligus
-        $popularFilms = $query->orderBy('created_at', 'desc')->paginate(12);
+        // Pagination dengan append search parameter
+        $popularFilms = $query->orderBy('created_at', 'desc')
+            ->paginate(12)
+            ->appends(['search' => $search]); // Tetap kirim original search (bukan lowercase)
 
-        // 5. (Opsional) Data Genre Statis untuk navigasi cepat
-        // Ini dikirim jika Anda ingin menggunakannya di view, meski view sebelumnya hardcode icon
+        // Genre list
         $genres = [
             ['name' => 'Action', 'icon' => '💥'],
             ['name' => 'Drama', 'icon' => '🎭'],
@@ -47,11 +58,11 @@ class UserDashboardController extends Controller
             ['name' => 'Animation', 'icon' => '🎨']
         ];
 
-        return view('dashboard', [
-            'featuredFilms' => $featuredFilms,
-            'popularFilms' => $popularFilms,
-            'genres' => $genres,
-            'search' => $search // Penting dikirim balik untuk input value di view
-        ]);
+        return view('dashboard', compact(
+            'featuredFilms',
+            'popularFilms',
+            'genres',
+            'search'
+        ));
     }
 }
