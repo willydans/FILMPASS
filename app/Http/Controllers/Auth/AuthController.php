@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log; // Tambahkan Log
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use App\Mail\OtpMail;
@@ -82,7 +82,8 @@ class AuthController extends Controller
     public function handleGoogleCallback()
     {
         try {
-            $googleUser = Socialite::driver('google')->user();
+            // Stateless wajib untuk Ngrok/Localhost
+            $googleUser = Socialite::driver('google')->stateless()->user();
             
             $user = User::where('google_id', $googleUser->id)
                         ->orWhere('email', $googleUser->email)
@@ -105,39 +106,38 @@ class AuthController extends Controller
                 ]);
             }
 
+            // Lanjut ke OTP
             return $this->sendOtp($user);
 
         } catch (\Exception $e) {
-            return redirect()->route('login')->withErrors(['email' => 'Login dengan Google gagal, silakan coba lagi.']);
+            // Jika errornya parah (misal Google down), baru kita tampilkan
+            return redirect()->route('login')->withErrors(['email' => 'Login Google gagal: ' . $e->getMessage()]);
         }
     }
 
-    // === LOGIKA OTP (MODIFIED) ===
+    // === LOGIKA OTP ===
 
     private function sendOtp($user)
     {
         $otp = rand(100000, 999999);
         
-        // Simpan di Cache & Session
         Cache::put('otp_' . $user->id, $otp, 300);
         session(['2fa:user_id' => $user->id]);
 
-        // LOG BACKUP: Catat OTP di storage/logs/laravel.log (Penting untuk testing)
-        Log::info("OTP untuk {$user->email} adalah: {$otp}");
+        // 1. Catat di Log (Backup Wajib untuk Development)
+        Log::info("OTP MANUAL untuk {$user->email} adalah: {$otp}");
 
+        // 2. Coba Kirim Email (Dengan Pengaman Try-Catch)
         try {
             Mail::to($user->email)->send(new OtpMail($otp));
         } catch (\Exception $e) {
-            // MODIFIKASI: Jika gagal kirim email di komputer lokal, jangan error.
-            // Tetap lanjut ke halaman verifikasi agar bisa input OTP dari log.
-            Log::error("Gagal kirim email OTP: " . $e->getMessage());
-            
-            // Jika di server production, baru kita kembalikan error
-            if (config('app.env') === 'production') {
-                 return redirect()->route('login')->withErrors(['email' => 'Gagal mengirim email OTP. Cek konfigurasi mail.']);
-            }
+            // JIKA GAGAL KIRIM EMAIL, JANGAN CRASH!
+            // Cukup catat errornya di log, tapi biarkan user lanjut ke halaman verifikasi.
+            Log::error("Gagal mengirim email SMTP: " . $e->getMessage());
         }
 
+        // 3. Tetap arahkan ke halaman verifikasi meskipun email gagal
+        // User bisa ambil kode dari Log file jika email tidak masuk
         return redirect()->route('otp.verify');
     }
 
